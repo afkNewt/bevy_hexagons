@@ -47,15 +47,11 @@ pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
-        let mut line = String::new();
-        println!("Enter the radius:");
-        let b1 = std::io::stdin().read_line(&mut line).unwrap();
-
         app.register_type::<HexTile>()
             .insert_resource(BoardVariables {
                 hex_size: 40.,
                 hex_gap: 2.5,
-                radius: line.trim().parse().unwrap(),
+                radius: 5,
             })
             .add_startup_system(load_colors.in_base_set(CoreSet::First))
             .add_startup_system(build_board)
