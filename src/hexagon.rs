@@ -1,3 +1,5 @@
+use std::fmt;
+
 use bevy::prelude::*;
 
 use crate::board::{HEX_SIZE, HEX_GAP};
@@ -46,6 +48,12 @@ impl Cube {
         }
 
         return neighbors;
+    }
+}
+
+impl fmt::Display for Cube {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({}, {}, {})", self.q, self.r, self.s)
     }
 }
 

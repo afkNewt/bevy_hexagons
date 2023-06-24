@@ -12,13 +12,13 @@ pub fn generate_tile_variant_text(mut commands: Commands, asset_server: Res<Asse
                 "Tile: ",
                 TextStyle {
                     font: asset_server.load("fonts/arial.ttf"),
-                    font_size: 60.0,
+                    font_size: 40.0,
                     color: Color::WHITE,
                 },
             ),
             TextSection::from_style(TextStyle {
                 font: asset_server.load("fonts/arial.ttf"),
-                font_size: 60.0,
+                font_size: 40.0,
                 color: Color::GOLD,
             }),
         ]),
@@ -35,15 +35,15 @@ pub fn update_tile_variant_text(
         return;
     };
 
-    let mut hovered_hex_variant = "None".to_string();
+    let mut hex_info = "None".to_string();
     for hex in &hexes {
         if hex.coordinate == hovered_hex {
-            hovered_hex_variant = format!("{:?}", hex.variant);
+            hex_info = format!("{:?} {}", hex.variant, hex.coordinate);
         }
     }
 
     for mut text in &mut tile_text {
         // Update the value of the second section
-        text.sections[1].value = format!("{hovered_hex_variant}");
+        text.sections[1].value = format!("{hex_info}");
     }
 }

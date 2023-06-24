@@ -7,23 +7,20 @@ use crate::hexagon::Cube;
 use super::{resources::HexColors, HEX_SIZE, HEX_RADIUS, HEX_GAP, components::{HexTile, TileVariant}};
 
 pub fn load_colors (
-    mut commands: Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut colors: ResMut<HexColors>,
 ) {
-    let colors = HexColors {
-        backround_hex: materials.add(ColorMaterial::from(Color::rgb_u8(30, 30, 30))),
+    colors.ally_capital = materials.add(ColorMaterial::from(Color::rgb_u8(60, 60, 255)));
+    colors.backround_hex = materials.add(ColorMaterial::from(Color::rgb_u8(30, 30, 30)));
 
-        neutral: materials.add(ColorMaterial::from(Color::rgb_u8(40, 40, 40))),
-        neutral_hovered: materials.add(ColorMaterial::from(Color::rgb_u8(50, 50, 50))),
+    colors.neutral = materials.add(ColorMaterial::from(Color::rgb_u8(40, 40, 40)));
+    colors.neutral_hovered = materials.add(ColorMaterial::from(Color::rgb_u8(50, 50, 50)));
 
-        ally_capital: materials.add(ColorMaterial::from(Color::rgb_u8(60, 60, 255))),
-        ally_capital_hovered: materials.add(ColorMaterial::from(Color::rgb_u8(100, 100, 255))),
+    colors.ally_capital = materials.add(ColorMaterial::from(Color::rgb_u8(60, 60, 255)));
+    colors.ally_capital_hovered = materials.add(ColorMaterial::from(Color::rgb_u8(100, 100, 255)));
 
-        enemy_capital: materials.add(ColorMaterial::from(Color::rgb_u8(255, 60, 60))),
-        enemy_capital_hovered: materials.add(ColorMaterial::from(Color::rgb_u8(255, 100, 100))),
-    };
-
-    commands.insert_resource(colors);
+    colors.enemy_capital = materials.add(ColorMaterial::from(Color::rgb_u8(255, 60, 60)));
+    colors.enemy_capital_hovered = materials.add(ColorMaterial::from(Color::rgb_u8(255, 100, 100)));
 }
 
 pub fn build_board(
@@ -73,13 +70,6 @@ pub fn build_board(
             let x = 3_f32.sqrt() * q as f32 + 3_f32.sqrt() / 2. * r as f32;
             let y = 3. / 2. * r as f32;
             pointy_top_hex_mesh.transform.translation = Vec3::new(x * padded_size, y * padded_size, 1.);
-
-            if q == 2 && r == 2 {
-                commands
-                .spawn(pointy_top_hex_mesh.clone())
-                .insert(HexTile { coordinate: Cube::axial_new(q, r), variant: TileVariant::EnemyCapital});
-                continue;
-            }
 
             commands
                 .spawn(pointy_top_hex_mesh.clone())
