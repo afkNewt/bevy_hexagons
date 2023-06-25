@@ -14,8 +14,7 @@ pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(HexColors::default())
-            .add_startup_system(load_colors)
-            .add_startup_system(build_board);
+        app.init_resource::<HexColors>()
+            .add_startup_systems((load_colors, build_board).chain());
     }
 }
