@@ -2,7 +2,7 @@ use std::fmt;
 
 use bevy::prelude::*;
 
-use crate::board::{HEX_SIZE, HEX_GAP};
+use crate::board::{HEX_GAP, HEX_SIZE};
 
 #[derive(Reflect, PartialEq, Clone, Copy)]
 pub struct Cube {
@@ -13,31 +13,35 @@ pub struct Cube {
 
 impl Cube {
     pub fn cube_new(q: i32, r: i32, s: i32) -> Self {
-        Self { q, r, s}
+        Self { q, r, s }
     }
 
     pub fn axial_new(q: i32, r: i32) -> Self {
-        Self { q, r, s: -q -r}
+        Self { q, r, s: -q - r }
     }
 
     // 0 is to the right for pointy top hexes
     // 0 is to the bottom right for flat top hexes
     // indexes move counter-clockwise
-    const CUBE_DIRECTION_VECTORS: [Cube; 6] = [
-        Cube { q: 1, r: 0, s: -1 }, Cube { q: 1, r: -1, s: 0 }, Cube { q: 0, r: -1, s: 1 },
-        Cube { q: -1, r: 0, s: 1 }, Cube { q: -1, r: 1, s: 0 }, Cube { q: 0, r: 1, s: -1 },
+    pub const CUBE_DIRECTION_VECTORS: [Cube; 6] = [
+        Cube { q: 1, r: 0, s: -1 },
+        Cube { q: 1, r: -1, s: 0 },
+        Cube { q: 0, r: -1, s: 1 },
+        Cube { q: -1, r: 0, s: 1 },
+        Cube { q: -1, r: 1, s: 0 },
+        Cube { q: 0, r: 1, s: -1 },
     ];
 
     pub fn cube_direction(direction: usize) -> Cube {
         return Cube::CUBE_DIRECTION_VECTORS[direction];
     }
 
-    pub fn cube_add(self, vec: Cube) -> Cube {
+    pub fn cube_add(self, vec: &Cube) -> Cube {
         return Cube::cube_new(self.q + vec.q, self.r + vec.r, self.s + vec.s);
     }
 
     pub fn cube_neighbor(self, direction: usize) -> Cube {
-        return self.cube_add(Self::cube_direction(direction));
+        return self.cube_add(&Self::cube_direction(direction));
     }
 
     pub fn cube_neighbors(self) -> [Cube; 6] {
@@ -66,11 +70,11 @@ pub struct FractionalCube {
 
 impl FractionalCube {
     pub fn cube_new(q: f32, r: f32, s: f32) -> Self {
-        Self { q, r, s}
+        Self { q, r, s }
     }
 
     pub fn axial_new(q: f32, r: f32) -> Self {
-        Self { q, r, s: -q -r}
+        Self { q, r, s: -q - r }
     }
 
     pub fn round(&self) -> Cube {
@@ -84,11 +88,9 @@ impl FractionalCube {
 
         if q_diff > r_diff && q_diff > s_diff {
             return Cube::cube_new((-r - s) as i32, r as i32, s as i32);
-        }
-        else if r_diff > s_diff {
+        } else if r_diff > s_diff {
             return Cube::cube_new(q as i32, (-q - s) as i32, s as i32);
-        }
-        else {
+        } else {
             return Cube::cube_new(q as i32, r as i32, (-q - r) as i32);
         }
     }
@@ -103,15 +105,25 @@ pub fn cursor_to_hex(windows: Query<&Window>) -> Option<Cube> {
         return None;
     };
 
-    let padded_size = HEX_SIZE + HEX_GAP;
-
-
     let x = cursor_pos.x - primary.resolution.width() / 2.;
     let y = cursor_pos.y - primary.resolution.height() / 2.;
 
-    // https://www.redblobgames.com/grids/hexagons/#pixel-to-hex
+    return Some(pixel_to_hex(x, y));
+}
+
+// https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
+pub fn hex_to_pixel(hex: Cube) -> (f32, f32) {
+    let padded_size = HEX_SIZE + HEX_GAP;
+    let x = padded_size * (3_f32.sqrt() * hex.q as f32 + 3_f32.sqrt() / 2. * hex.r as f32);
+    let y = padded_size * (3. / 2. * hex.r as f32);
+    return (x, y);
+}
+
+// https://www.redblobgames.com/grids/hexagons/#pixel-to-hex
+pub fn pixel_to_hex(x: f32, y: f32) -> Cube {
+    let padded_size = HEX_SIZE + HEX_GAP;
     let q = (3_f32.sqrt() / 3. * x - 1. / 3. * y) / padded_size;
     let r = (2. / 3. * y) / padded_size;
 
-    return Some(FractionalCube::axial_new(q, r).round());
+    return FractionalCube::axial_new(q, r).round();
 }

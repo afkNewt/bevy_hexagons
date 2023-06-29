@@ -1,27 +1,36 @@
 use bevy::prelude::*;
 
-use crate::{board::{components::{HexTile, TileVariant}, resources::HexColors}, hexagon::cursor_to_hex};
+use crate::{
+    board::{
+        components::{HexTile, TileVariant},
+        resources::HexColors,
+    },
+    hexagon::cursor_to_hex,
+};
 
-use super::resources::AllyCapital;
+use super::resources::{AllyCapital, PlayerCoins, TurnCounter};
 
-pub fn place_ally_capital (
+pub fn place_ally_capital(
     mut ally_capital: ResMut<AllyCapital>,
     buttons: Res<Input<MouseButton>>,
     windows: Query<&Window>,
     mut hexes: Query<&mut HexTile>,
 ) {
-    if ally_capital.position != None { return; }
-    if !buttons.just_pressed(MouseButton::Left) { return; }
+    if ally_capital.position.is_some() {
+        return;
+    }
+    if !buttons.just_pressed(MouseButton::Left) {
+        return;
+    }
     let Some(hovered_hex) = cursor_to_hex(windows) else { return; };
 
     let claim_tiles = hovered_hex.cube_neighbors();
 
     for hex in &hexes {
-        if claim_tiles.contains(&hex.coordinate) || hex.coordinate == hovered_hex
+        if (claim_tiles.contains(&hex.coordinate) || hex.coordinate == hovered_hex)
+            && hex.variant != TileVariant::Neutral
         {
-            if hex.variant != TileVariant::Neutral {
-                return;
-            }
+            return;
         }
     }
 
@@ -37,13 +46,34 @@ pub fn place_ally_capital (
     }
 }
 
+pub fn pass_turn(
+    mut turn_counter: ResMut<TurnCounter>,
+    mut player_coin_count: ResMut<PlayerCoins>,
+    hex_tiles: Query<&HexTile>,
+    keys: Res<Input<KeyCode>>,
+) {
+    if !keys.just_released(KeyCode::Space) {
+        return;
+    }
+
+    for hex_tile in &hex_tiles {
+        if hex_tile.variant == TileVariant::AllyLand {
+            player_coin_count.0 += 1;
+        }
+    }
+
+    // give the player a garanteed
+    // 2 coins per turn
+    player_coin_count.0 += 2;
+
+    turn_counter.0 += 1;
+}
 
 pub fn highlight_hovered_hex(
     windows: Query<&Window>,
     mut hexes: Query<(&HexTile, &mut Handle<ColorMaterial>)>,
     colors: Res<HexColors>,
 ) {
-
     let Some(hovered_hex) = cursor_to_hex(windows) else {
         return;
     };
@@ -63,7 +93,7 @@ pub fn highlight_hovered_hex(
         if hex.coordinate.r != hovered_hex.r {
             continue;
         }
-        
+
         *color_mat = match hex.variant {
             TileVariant::Neutral => colors.neutral_hovered.clone(),
             TileVariant::AllyCapital => colors.ally_capital_hovered.clone(),
