@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Resource, Default)]
+#[derive(Resource)]
 pub struct HexColors {
     pub backround_hex: Handle<ColorMaterial>,
 

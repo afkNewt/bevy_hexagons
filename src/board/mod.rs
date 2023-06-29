@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use self::{systems::{load_colors, build_board}, resources::HexColors};
+use self::systems::{build_board, load_colors};
 
 pub mod components;
 pub mod resources;
@@ -14,7 +14,11 @@ pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<HexColors>()
-            .add_startup_systems((load_colors, build_board).chain());
+        app.add_startup_system(load_colors.in_base_set(StartupSet::PreStartup))
+            .add_startup_system(
+                build_board
+                    .in_base_set(StartupSet::Startup)
+                    .after(load_colors),
+            );
     }
 }

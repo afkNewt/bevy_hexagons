@@ -14,18 +14,16 @@ use super::{
     HEX_GAP, HEX_RADIUS, HEX_SIZE,
 };
 
-pub fn load_colors(mut materials: ResMut<Assets<ColorMaterial>>, mut colors: ResMut<HexColors>) {
-    colors.ally_capital = materials.add(ColorMaterial::from(Color::rgb_u8(60, 60, 255)));
-    colors.backround_hex = materials.add(ColorMaterial::from(Color::rgb_u8(30, 30, 30)));
-
-    colors.neutral = materials.add(ColorMaterial::from(Color::rgb_u8(40, 40, 40)));
-    colors.neutral_hovered = materials.add(ColorMaterial::from(Color::rgb_u8(50, 50, 50)));
-
-    colors.ally_capital = materials.add(ColorMaterial::from(Color::rgb_u8(60, 60, 255)));
-    colors.ally_capital_hovered = materials.add(ColorMaterial::from(Color::rgb_u8(100, 100, 255)));
-
-    colors.enemy_capital = materials.add(ColorMaterial::from(Color::rgb_u8(255, 60, 60)));
-    colors.enemy_capital_hovered = materials.add(ColorMaterial::from(Color::rgb_u8(255, 100, 100)));
+pub fn load_colors(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+    commands.insert_resource(HexColors {
+        backround_hex: materials.add(ColorMaterial::from(Color::rgb_u8(30, 30, 30))),
+        neutral: materials.add(ColorMaterial::from(Color::rgb_u8(40, 40, 40))),
+        neutral_hovered: materials.add(ColorMaterial::from(Color::rgb_u8(50, 50, 50))),
+        ally_capital: materials.add(ColorMaterial::from(Color::rgb_u8(60, 60, 255))),
+        ally_capital_hovered: materials.add(ColorMaterial::from(Color::rgb_u8(100, 100, 255))),
+        enemy_capital: materials.add(ColorMaterial::from(Color::rgb_u8(255, 60, 60))),
+        enemy_capital_hovered: materials.add(ColorMaterial::from(Color::rgb_u8(255, 100, 100))),
+    });
 }
 
 pub fn build_board(
