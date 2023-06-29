@@ -10,7 +10,9 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(AllyCapital { position: None })
-            .add_system(place_ally_capital)
-            .add_system(highlight_hovered_hex);
+            .add_systems((
+            place_ally_capital,
+            highlight_hovered_hex
+        ));
     }
 }

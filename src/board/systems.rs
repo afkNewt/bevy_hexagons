@@ -1,15 +1,20 @@
-use std::{f32::consts::PI, cmp};
+use std::{cmp, f32::consts::PI};
 
-use bevy::{prelude::*, render::{render_resource::PrimitiveTopology, mesh::Indices}, sprite::MaterialMesh2dBundle};
+use bevy::{
+    prelude::*,
+    render::{mesh::Indices, render_resource::PrimitiveTopology},
+    sprite::MaterialMesh2dBundle,
+};
 
 use crate::hexagon::Cube;
 
-use super::{resources::HexColors, HEX_SIZE, HEX_RADIUS, HEX_GAP, components::{HexTile, TileVariant}};
+use super::{
+    components::{HexTile, TileVariant},
+    resources::HexColors,
+    HEX_GAP, HEX_RADIUS, HEX_SIZE,
+};
 
-pub fn load_colors (
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut colors: ResMut<HexColors>,
-) {
+pub fn load_colors(mut materials: ResMut<Assets<ColorMaterial>>, mut colors: ResMut<HexColors>) {
     colors.ally_capital = materials.add(ColorMaterial::from(Color::rgb_u8(60, 60, 255)));
     colors.backround_hex = materials.add(ColorMaterial::from(Color::rgb_u8(30, 30, 30)));
 
@@ -69,11 +74,13 @@ pub fn build_board(
             // https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
             let x = 3_f32.sqrt() * q as f32 + 3_f32.sqrt() / 2. * r as f32;
             let y = 3. / 2. * r as f32;
-            pointy_top_hex_mesh.transform.translation = Vec3::new(x * padded_size, y * padded_size, 1.);
+            pointy_top_hex_mesh.transform.translation =
+                Vec3::new(x * padded_size, y * padded_size, 1.);
 
-            commands
-                .spawn(pointy_top_hex_mesh.clone())
-                .insert(HexTile { coordinate: Cube::axial_new(q, r), variant: TileVariant::Neutral});
+            commands.spawn(pointy_top_hex_mesh.clone()).insert(HexTile {
+                coordinate: Cube::axial_new(q, r),
+                variant: TileVariant::Neutral,
+            });
         }
     }
 
@@ -103,7 +110,8 @@ pub fn build_board(
     // magic number is the x of vertex translation
     // with index 2 on a pointy hex
     let magic_number: f32 = (PI / 180. * 30.).cos();
-    let scale = ((HEX_RADIUS as f32 * 2. + 1.8) * HEX_SIZE + HEX_RADIUS as f32 * 2. * HEX_GAP) * magic_number;
+    let scale = ((HEX_RADIUS as f32 * 2. + 1.8) * HEX_SIZE + HEX_RADIUS as f32 * 2. * HEX_GAP)
+        * magic_number;
 
     let flat_top_hex_mesh = MaterialMesh2dBundle {
         mesh: meshes.add(triangle).into(),
@@ -112,6 +120,5 @@ pub fn build_board(
         ..default()
     };
 
-    commands
-        .spawn(flat_top_hex_mesh.clone());
+    commands.spawn(flat_top_hex_mesh);
 }

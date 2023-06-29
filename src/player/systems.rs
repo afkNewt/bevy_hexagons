@@ -68,7 +68,7 @@ pub fn highlight_hovered_hex(
             TileVariant::Neutral => colors.neutral_hovered.clone(),
             TileVariant::AllyCapital => colors.ally_capital_hovered.clone(),
             TileVariant::EnemyCapital => colors.enemy_capital_hovered.clone(),
-            _ => colors.neutral.clone(),
+            _ => colors.neutral_hovered.clone(),
         };
     }
 }

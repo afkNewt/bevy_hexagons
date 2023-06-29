@@ -1,19 +1,20 @@
 use bevy::prelude::*;
 
-use crate::{board::components::{TileVariant, HexTile}, hexagon::Cube};
+use crate::{
+    board::components::{HexTile, TileVariant},
+    hexagon::Cube,
+};
 
-pub fn place_enemy_capital (
-    mut hexes: Query<&mut HexTile>,
-) {
-    let enemy_capital = Cube::axial_new(3, 2);
+pub fn place_enemy_capital(mut hexes: Query<&mut HexTile>) {
+    let enemy_capital = Cube::axial_new(0, 0);
     let enemy_tiles = enemy_capital.cube_neighbors();
 
+    println!("{}", hexes.is_empty());
     for hex in &hexes {
-        if enemy_tiles.contains(&hex.coordinate) || hex.coordinate == enemy_capital
+        if (enemy_tiles.contains(&hex.coordinate) || hex.coordinate == enemy_capital)
+            && hex.variant != TileVariant::Neutral
         {
-            if hex.variant != TileVariant::Neutral {
-                return;
-            }
+            return;
         }
     }
 
