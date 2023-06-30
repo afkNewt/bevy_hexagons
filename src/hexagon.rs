@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{cmp, fmt};
 
 use bevy::prelude::*;
 
@@ -36,12 +36,12 @@ impl Cube {
         return Cube::CUBE_DIRECTION_VECTORS[direction];
     }
 
-    pub fn cube_add(self, vec: &Cube) -> Cube {
+    pub fn cube_add(self, vec: Cube) -> Cube {
         return Cube::cube_new(self.q + vec.q, self.r + vec.r, self.s + vec.s);
     }
 
     pub fn cube_neighbor(self, direction: usize) -> Cube {
-        return self.cube_add(&Self::cube_direction(direction));
+        return self.cube_add(Self::cube_direction(direction));
     }
 
     pub fn cube_neighbors(self) -> [Cube; 6] {
@@ -126,4 +126,17 @@ pub fn pixel_to_hex(x: f32, y: f32) -> Cube {
     let r = (2. / 3. * y) / padded_size;
 
     return FractionalCube::axial_new(q, r).round();
+}
+
+pub fn hexes_in_range(radius: i32, center: Cube) -> Vec<Cube> {
+    (-radius..=radius)
+        .flat_map(|q| -> Vec<Cube> {
+            let r1 = cmp::max(-radius, -q - radius);
+            let r2 = cmp::min(radius, -q + radius);
+
+            (r1..=r2)
+                .map(|r| -> Cube { center.cube_add(Cube::axial_new(q, r)) })
+                .collect()
+        })
+        .collect()
 }

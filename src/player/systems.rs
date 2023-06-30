@@ -6,6 +6,7 @@ use crate::{
         resources::HexColors,
     },
     hexagon::cursor_to_hex,
+    units::components::Unit,
 };
 
 use super::resources::{AllyCapital, PlayerCoins, TurnCounter};
@@ -49,6 +50,7 @@ pub fn place_ally_capital(
 pub fn pass_turn(
     mut turn_counter: ResMut<TurnCounter>,
     mut player_coin_count: ResMut<PlayerCoins>,
+    mut units: Query<&mut Unit>,
     hex_tiles: Query<&HexTile>,
     keys: Res<Input<KeyCode>>,
 ) {
@@ -60,6 +62,10 @@ pub fn pass_turn(
         if hex_tile.variant == TileVariant::AllyLand {
             player_coin_count.0 += 1;
         }
+    }
+
+    for mut unit in &mut units {
+        unit.new_turn();
     }
 
     // give the player a garanteed

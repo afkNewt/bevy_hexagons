@@ -17,7 +17,7 @@ pub enum Keyword {
     Haste,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Action {
     Move,
     Attack,
@@ -113,7 +113,7 @@ impl Unit {
         let mut hexes = Vec::new();
 
         for hex in &self.attack_hexes {
-            hexes.push(self.position.cube_add(hex));
+            hexes.push(self.position.cube_add(*hex));
         }
 
         return hexes;
@@ -123,7 +123,7 @@ impl Unit {
         let mut hexes = Vec::new();
 
         for hex in &self.move_hexes {
-            hexes.push(self.position.cube_add(hex));
+            hexes.push(self.position.cube_add(*hex));
         }
 
         return hexes;

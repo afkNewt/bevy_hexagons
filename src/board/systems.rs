@@ -1,4 +1,4 @@
-use std::{cmp, f32::consts::PI};
+use std::{cmp, f32::consts::PI, fmt::LowerHex};
 
 use bevy::{
     prelude::*,
@@ -6,7 +6,7 @@ use bevy::{
     sprite::MaterialMesh2dBundle,
 };
 
-use crate::hexagon::Cube;
+use crate::hexagon::{hexes_in_range, Cube};
 
 use super::{
     components::{HexTile, TileVariant},
@@ -61,25 +61,19 @@ pub fn build_board(
         ..default()
     };
 
-    // https://www.redblobgames.com/grids/hexagons/implementation.html#shape-hexagon
     let padded_size = HEX_SIZE + HEX_GAP;
 
-    for q in -HEX_RADIUS..=HEX_RADIUS {
-        let r1 = cmp::max(-HEX_RADIUS, -q - HEX_RADIUS);
-        let r2 = cmp::min(HEX_RADIUS, -q + HEX_RADIUS);
+    let hex_coords = hexes_in_range(HEX_RADIUS, Cube::axial_new(0, 0));
+    for coord in hex_coords {
+        // https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
+        let x = 3_f32.sqrt() * coord.q as f32 + 3_f32.sqrt() / 2. * coord.r as f32;
+        let y = 3. / 2. * coord.r as f32;
+        pointy_top_hex_mesh.transform.translation = Vec3::new(x * padded_size, y * padded_size, 1.);
 
-        for r in r1..=r2 {
-            // https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
-            let x = 3_f32.sqrt() * q as f32 + 3_f32.sqrt() / 2. * r as f32;
-            let y = 3. / 2. * r as f32;
-            pointy_top_hex_mesh.transform.translation =
-                Vec3::new(x * padded_size, y * padded_size, 1.);
-
-            commands.spawn(pointy_top_hex_mesh.clone()).insert(HexTile {
-                coordinate: Cube::axial_new(q, r),
-                variant: TileVariant::Neutral,
-            });
-        }
+        commands.spawn(pointy_top_hex_mesh.clone()).insert(HexTile {
+            coordinate: coord,
+            variant: TileVariant::Neutral,
+        });
     }
 
     // vertex positions for a pointy topped hexagon

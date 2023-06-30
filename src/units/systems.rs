@@ -4,11 +4,15 @@ use crate::{
     board::{
         components::{HexTile, TileVariant},
         resources::HexColors,
+        HEX_RADIUS,
     },
-    hexagon::{cursor_to_hex, hex_to_pixel, Cube},
+    hexagon::{cursor_to_hex, hex_to_pixel, hexes_in_range, Cube},
 };
 
-use super::{components::Unit, resources::SelectedUnit};
+use super::{
+    components::{Action, Unit},
+    resources::SelectedUnit,
+};
 
 pub fn test_spawn_unit(mut commands: Commands, asset_server: Res<AssetServer>) {
     let (x, y) = hex_to_pixel(Cube::axial_new(-2, 4));
@@ -60,19 +64,63 @@ pub fn check_for_unit_selection(
     selected_unit.0 = None;
 }
 
+pub fn check_for_unit_movement(
+    windows: Query<&Window>,
+    buttons: Res<Input<MouseButton>>,
+    selected_unit: Res<SelectedUnit>,
+    mut units: Query<(&mut Unit, &mut Transform)>,
+) {
+    // make sure we left clicked
+    if !buttons.just_released(MouseButton::Left) {
+        return;
+    }
+
+    // make sure we are hovering a hex
+    let Some(hovered_hex) = cursor_to_hex(windows) else {
+        return;
+    };
+
+    // make sure there is an entity selected
+    let Some(selected_entity) = selected_unit.0 else {
+        return;
+    };
+
+    // make sure the entity is a unit
+    let Ok((mut unit, mut unit_transform)) = units.get_mut(selected_entity) else {
+        return;
+    };
+
+    // make sure the click was inside the board
+    if !hexes_in_range(HEX_RADIUS, Cube::axial_new(0, 0)).contains(&hovered_hex) {
+        return;
+    }
+
+    if unit.absolute_attack_hexes().contains(&hovered_hex) && unit.actions.contains(&Action::Attack)
+    {
+        // check if there is an enemy on the selected hex, if so attack it
+        // then return
+    }
+
+    if unit.absolute_move_hexes().contains(&hovered_hex) && unit.actions.contains(&Action::Move) {
+        let (x, y) = hex_to_pixel(hovered_hex);
+        unit_transform.translation = Vec3::new(x, y, 1.0);
+        unit.position = hovered_hex;
+        unit.actions.retain(|&x| x != Action::Move);
+    }
+}
+
 pub fn highlight_unit_hex(
     selected_unit: Res<SelectedUnit>,
     units: Query<&Unit>,
     mut hexes: Query<(&HexTile, &mut Handle<ColorMaterial>)>,
     colors: Res<HexColors>,
 ) {
+    // TODO: only highlight the hex if we have
+    // the relevant action ready
+
     let Some(selected_entity) = selected_unit.0 else {
         return;
     };
-
-    if units.get(selected_entity).is_err() {
-        return;
-    }
 
     let Ok(unit) = units.get(selected_entity) else {
         return;
