@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::hexagon::Cube;
+use crate::hexagon::{hex_to_pixel, Cube};
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum Keyword {
@@ -63,12 +63,12 @@ impl Unit {
         }
     }
 
-    pub fn test_new(position: Cube) -> Self {
+    pub fn test_new(position: Cube, ally: bool) -> Self {
         Self::new(
             position,
-            true,
-            10,
-            4,
+            ally,
+            2,
+            3,
             Vec::new(),
             Cube::CUBE_DIRECTION_VECTORS.into(),
             Cube::CUBE_DIRECTION_VECTORS.into(),
@@ -87,7 +87,7 @@ impl Unit {
         self.actions = vec![Action::Move, Action::Attack];
     }
 
-    pub fn take_damage(&mut self, damage: i32) -> bool {
+    fn take_damage(&mut self, damage: i32) -> bool {
         let armor = self.keywords.iter().find_map(|k| match k {
             Keyword::Armor(amount) => Some(amount),
             _ => None,
@@ -97,7 +97,7 @@ impl Unit {
         return self.health <= 0;
     }
 
-    pub fn attack(&mut self, opponent: &mut Unit) {
+    pub fn attack(&mut self, my_transform: &mut Transform, opponent: &mut Unit) {
         let killed = opponent.take_damage(self.damage);
 
         if !killed && !self.keywords.contains(&Keyword::FastAttack) {
@@ -106,6 +106,9 @@ impl Unit {
 
         if self.keywords.contains(&Keyword::Haste) && killed {
             self.position = opponent.position;
+
+            let (x, y) = hex_to_pixel(self.position);
+            my_transform.translation = Vec3::new(x, y, 1.0);
         }
     }
 

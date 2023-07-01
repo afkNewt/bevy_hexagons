@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use bevy::prelude::*;
 
 use crate::{
@@ -26,7 +28,20 @@ pub fn test_spawn_unit(mut commands: Commands, asset_server: Res<AssetServer>) {
             texture: asset_server.load("sprites/kl.png"),
             ..default()
         })
-        .insert(Unit::test_new(Cube::axial_new(-2, 4)));
+        .insert(Unit::test_new(Cube::axial_new(-2, 4), true));
+
+    let (x, y) = hex_to_pixel(Cube::axial_new(-4, 2));
+    commands
+        .spawn(SpriteBundle {
+            transform: Transform {
+                translation: Vec3::new(x, y, 1.),
+                scale: Vec3::splat(0.075),
+                ..Default::default()
+            },
+            texture: asset_server.load("sprites/kl.png"),
+            ..default()
+        })
+        .insert(Unit::test_new(Cube::axial_new(-2, 4), false));
 }
 
 pub fn check_for_unit_selection(
@@ -64,11 +79,19 @@ pub fn check_for_unit_selection(
     selected_unit.0 = None;
 }
 
+pub fn despawn_dead_units(mut commands: Commands, units: Query<(Entity, &Unit)>) {
+    for (entity, unit) in &units {
+        if unit.health <= 0 {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
+}
+
 pub fn check_for_unit_movement(
     windows: Query<&Window>,
     buttons: Res<Input<MouseButton>>,
     selected_unit: Res<SelectedUnit>,
-    mut units: Query<(&mut Unit, &mut Transform)>,
+    mut units: Query<(&mut Unit, &mut Transform, Entity)>,
 ) {
     // make sure we left clicked
     if !buttons.just_released(MouseButton::Left) {
@@ -86,7 +109,7 @@ pub fn check_for_unit_movement(
     };
 
     // make sure the entity is a unit
-    let Ok((mut unit, mut unit_transform)) = units.get_mut(selected_entity) else {
+    let Ok((unit, _unit_transform, _unit_id)) = units.get(selected_entity) else {
         return;
     };
 
@@ -97,11 +120,44 @@ pub fn check_for_unit_movement(
 
     if unit.absolute_attack_hexes().contains(&hovered_hex) && unit.actions.contains(&Action::Attack)
     {
-        // check if there is an enemy on the selected hex, if so attack it
-        // then return
+        let (x, y) = hex_to_pixel(hovered_hex);
+
+        let mut enemy_entity = None;
+        for (enemy_unit, transform, entity) in &units {
+            if enemy_unit.ally || transform.translation != Vec3::new(x, y, 1.0) {
+                continue;
+            }
+
+            enemy_entity = Some(entity);
+            break;
+        }
+
+        if let Some(enemy_entity) = enemy_entity {
+            let entities = units.get_many_mut([selected_entity, enemy_entity]);
+            if let Ok([mut attacker, mut defender]) = entities {
+                attacker.0.attack(&mut attacker.1, &mut defender.0);
+                attacker.0.actions.retain(|&x| x != Action::Attack);
+                return;
+            }
+        }
     }
 
+    let unit = units.get(selected_entity).unwrap().0;
+
     if unit.absolute_move_hexes().contains(&hovered_hex) && unit.actions.contains(&Action::Move) {
+        // check if tile is occupied
+        let (x, y) = hex_to_pixel(hovered_hex);
+        for (_unit, transform, _entity) in &units {
+            if transform.translation != Vec3::new(x, y, 1.0) {
+                continue;
+            }
+
+            // tile is occupied
+            return;
+        }
+
+        let (mut unit, mut unit_transform, _unit_id) = units.get_mut(selected_entity).unwrap();
+
         let (x, y) = hex_to_pixel(hovered_hex);
         unit_transform.translation = Vec3::new(x, y, 1.0);
         unit.position = hovered_hex;

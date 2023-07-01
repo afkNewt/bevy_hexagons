@@ -3,7 +3,8 @@ use bevy::prelude::*;
 use self::{
     resources::SelectedUnit,
     systems::{
-        check_for_unit_movement, check_for_unit_selection, highlight_unit_hex, test_spawn_unit,
+        check_for_unit_movement, check_for_unit_selection, despawn_dead_units, highlight_unit_hex,
+        test_spawn_unit,
     },
 };
 
@@ -19,6 +20,7 @@ impl Plugin for UnitsPlugin {
             .add_startup_system(test_spawn_unit.in_base_set(StartupSet::PostStartup))
             .add_systems((
                 check_for_unit_selection,
+                despawn_dead_units,
                 highlight_unit_hex,
                 check_for_unit_movement.before(check_for_unit_selection),
             ));
