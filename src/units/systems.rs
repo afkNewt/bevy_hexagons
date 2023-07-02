@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use bevy::prelude::*;
 
 use crate::{
@@ -12,25 +10,42 @@ use crate::{
 };
 
 use super::{
-    components::{Action, Unit},
+    components::{Action, Unit, UnitDefault},
     resources::SelectedUnit,
 };
 
 pub fn test_spawn_unit(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let (x, y) = hex_to_pixel(Cube::axial_new(-2, 4));
-    commands
-        .spawn(SpriteBundle {
-            transform: Transform {
-                translation: Vec3::new(x, y, 1.),
-                scale: Vec3::splat(0.075),
-                ..Default::default()
-            },
-            texture: asset_server.load("sprites/kl.png"),
-            ..default()
-        })
-        .insert(Unit::test_new(Cube::axial_new(-2, 4), true));
+    spawn_unit(
+        &mut commands,
+        &asset_server,
+        Cube::axial_new(-2, 4),
+        UnitDefault::BladeDancer,
+        true,
+    );
+    spawn_unit(
+        &mut commands,
+        &asset_server,
+        Cube::axial_new(-4, 2),
+        UnitDefault::Scout,
+        false,
+    );
+    spawn_unit(
+        &mut commands,
+        &asset_server,
+        Cube::axial_new(-3, 0),
+        UnitDefault::Archer,
+        false,
+    );
+}
 
-    let (x, y) = hex_to_pixel(Cube::axial_new(-4, 2));
+fn spawn_unit(
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+    hex_pos: Cube,
+    unit: UnitDefault,
+    ally: bool,
+) {
+    let (x, y) = hex_to_pixel(hex_pos);
     commands
         .spawn(SpriteBundle {
             transform: Transform {
@@ -38,10 +53,10 @@ pub fn test_spawn_unit(mut commands: Commands, asset_server: Res<AssetServer>) {
                 scale: Vec3::splat(0.075),
                 ..Default::default()
             },
-            texture: asset_server.load("sprites/kl.png"),
+            texture: asset_server.load(unit.sprite_location()),
             ..default()
         })
-        .insert(Unit::test_new(Cube::axial_new(-2, 4), false));
+        .insert(Unit::new_default(unit, hex_pos, ally));
 }
 
 pub fn check_for_unit_selection(
@@ -54,7 +69,7 @@ pub fn check_for_unit_selection(
         return;
     };
 
-    if selected_unit.0.is_some() && buttons.just_released(MouseButton::Right) {
+    if buttons.just_released(MouseButton::Right) {
         selected_unit.0 = None;
         return;
     }
@@ -136,7 +151,6 @@ pub fn check_for_unit_movement(
             let entities = units.get_many_mut([selected_entity, enemy_entity]);
             if let Ok([mut attacker, mut defender]) = entities {
                 attacker.0.attack(&mut attacker.1, &mut defender.0);
-                attacker.0.actions.retain(|&x| x != Action::Attack);
                 return;
             }
         }
@@ -161,7 +175,7 @@ pub fn check_for_unit_movement(
         let (x, y) = hex_to_pixel(hovered_hex);
         unit_transform.translation = Vec3::new(x, y, 1.0);
         unit.position = hovered_hex;
-        unit.actions.retain(|&x| x != Action::Move);
+        unit.remove_action(Action::Move);
     }
 }
 

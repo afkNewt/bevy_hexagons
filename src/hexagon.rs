@@ -1,6 +1,6 @@
 use std::{cmp, fmt};
 
-use bevy::prelude::*;
+use bevy::{a11y::accesskit::Vec2, prelude::*};
 
 use crate::board::{HEX_GAP, HEX_SIZE};
 
@@ -30,6 +30,15 @@ impl Cube {
         Cube { q: -1, r: 0, s: 1 },
         Cube { q: -1, r: 1, s: 0 },
         Cube { q: 0, r: 1, s: -1 },
+    ];
+
+    pub const CUBE_DIAGONAL_VECTORS: [Cube; 6] = [
+        Cube { q: 2, r: -1, s: -1 },
+        Cube { q: 1, r: -2, s: 1 },
+        Cube { q: -1, r: -1, s: 2 },
+        Cube { q: -2, r: 1, s: 1 },
+        Cube { q: -1, r: 2, s: -1 },
+        Cube { q: 1, r: 1, s: -2 },
     ];
 
     pub fn cube_direction(direction: usize) -> Cube {
@@ -139,4 +148,23 @@ pub fn hexes_in_range(radius: i32, center: Cube) -> Vec<Cube> {
                 .collect()
         })
         .collect()
+}
+
+fn cube_scale(hex: Cube, factor: i32) -> Cube {
+    Cube::cube_new(hex.q * factor, hex.r * factor, hex.s * factor)
+}
+
+// https://www.redblobgames.com/grids/hexagons/#rings
+pub fn hexes_in_ring(radius: i32, center: Cube) -> Vec<Cube> {
+    let mut hex = center.cube_add(cube_scale(Cube::CUBE_DIRECTION_VECTORS[4], radius));
+
+    let mut results = Vec::new();
+    for i in 0..6 {
+        for _ in 0..radius {
+            results.push(hex);
+            hex = hex.cube_neighbor(i);
+        }
+    }
+
+    return results;
 }

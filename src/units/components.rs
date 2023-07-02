@@ -1,6 +1,28 @@
 use bevy::prelude::*;
 
-use crate::hexagon::{hex_to_pixel, Cube};
+use crate::hexagon::{hex_to_pixel, hexes_in_range, hexes_in_ring, Cube};
+
+pub enum UnitDefault {
+    Archer,
+    BladeDancer,
+    Scout,
+    Knight,
+    Catapult,
+    Newt,
+}
+
+impl UnitDefault {
+    pub fn sprite_location(&self) -> String {
+        match self {
+            UnitDefault::Archer => "sprites/nl.png".to_string(),
+            UnitDefault::BladeDancer => "sprites/nl.png".to_string(),
+            UnitDefault::Scout => "sprites/pl.png".to_string(),
+            UnitDefault::Knight => "sprites/rl.png".to_string(),
+            UnitDefault::Catapult => "sprites/rl.png".to_string(),
+            UnitDefault::Newt => "sprites/kl.png".to_string(),
+        }
+    }
+}
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum Keyword {
@@ -9,12 +31,15 @@ pub enum Keyword {
     Armor(i32),
     // Heals health every turn
     Regeneration(i32),
-    // when attacking, the defender
-    // does not striker back
-    FastAttack,
+    // When attacked, will strike
+    // the attacker
+    StrikeBack,
     // if they kill they take
     // the place of the defender
-    Haste,
+    Nimble,
+    // if you get a kill, it doesnt take
+    // your attack action
+    Executioner,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -63,16 +88,86 @@ impl Unit {
         }
     }
 
-    pub fn test_new(position: Cube, ally: bool) -> Self {
-        Self::new(
-            position,
-            ally,
-            2,
-            3,
-            Vec::new(),
-            Cube::CUBE_DIRECTION_VECTORS.into(),
-            Cube::CUBE_DIRECTION_VECTORS.into(),
-        )
+    pub fn new_default(default: UnitDefault, position: Cube, ally: bool) -> Self {
+        let actions = vec![Action::Move];
+
+        match default {
+            UnitDefault::Archer => Unit {
+                position,
+                ally,
+                max_health: 1,
+                health: 1,
+                damage: 2,
+                keywords: Vec::new(),
+                actions,
+                move_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
+                attack_hexes: hexes_in_ring(2, Cube::axial_new(0, 0)),
+            },
+            UnitDefault::BladeDancer => Unit {
+                position,
+                ally,
+                max_health: 2,
+                health: 2,
+                damage: 2,
+                keywords: vec![Keyword::Nimble, Keyword::Executioner],
+                actions,
+                move_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
+                attack_hexes: Cube::CUBE_DIAGONAL_VECTORS.to_vec(),
+            },
+            UnitDefault::Scout => Unit {
+                position,
+                ally,
+                max_health: 1,
+                health: 1,
+                damage: 1,
+                keywords: Vec::new(),
+                actions,
+                move_hexes: hexes_in_range(2, Cube::axial_new(0, 0)),
+                attack_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
+            },
+            UnitDefault::Knight => Unit {
+                position,
+                ally,
+                max_health: 4,
+                health: 4,
+                damage: 2,
+                keywords: vec![Keyword::Armor(1)],
+                actions,
+                move_hexes: [Cube::CUBE_DIRECTION_VECTORS, Cube::CUBE_DIAGONAL_VECTORS].concat(),
+                attack_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
+            },
+            UnitDefault::Catapult => Unit {
+                position,
+                ally,
+                max_health: 2,
+                health: 2,
+                damage: 4,
+                keywords: Vec::new(),
+                actions,
+                move_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
+                attack_hexes: hexes_in_ring(3, Cube::axial_new(0, 0)),
+            },
+            UnitDefault::Newt => Unit {
+                position,
+                ally,
+                max_health: 10,
+                health: 6,
+                damage: 2,
+                keywords: vec![Keyword::StrikeBack, Keyword::Regeneration(2)],
+                actions,
+                move_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
+                attack_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
+            },
+        }
+    }
+
+    pub fn remove_action(&mut self, action: Action) -> bool {
+        let Some(i) = self.actions.iter().position(|a| *a == action) else {
+            return false;
+        };
+
+        self.actions.remove(i);
+        return true;
     }
 
     pub fn new_turn(&mut self) {
@@ -92,7 +187,9 @@ impl Unit {
             Keyword::Armor(amount) => Some(amount),
             _ => None,
         });
-        self.health -= damage - armor.unwrap_or(&0);
+        let armored_damage = (damage - armor.unwrap_or(&0)).max(0);
+        self.health -= armored_damage;
+        println!("{}", self.health);
 
         return self.health <= 0;
     }
@@ -100,11 +197,15 @@ impl Unit {
     pub fn attack(&mut self, my_transform: &mut Transform, opponent: &mut Unit) {
         let killed = opponent.take_damage(self.damage);
 
-        if !killed && !self.keywords.contains(&Keyword::FastAttack) {
+        if !(killed && self.keywords.contains(&Keyword::Executioner)) {
+            self.remove_action(Action::Attack);
+        }
+
+        if !killed && opponent.keywords.contains(&Keyword::StrikeBack) {
             self.take_damage(opponent.damage);
         }
 
-        if self.keywords.contains(&Keyword::Haste) && killed {
+        if self.keywords.contains(&Keyword::Nimble) && killed {
             self.position = opponent.position;
 
             let (x, y) = hex_to_pixel(self.position);
