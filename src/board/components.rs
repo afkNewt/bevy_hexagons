@@ -15,4 +15,5 @@ pub enum TileVariant {
 pub struct HexTile {
     pub coordinate: Cube,
     pub variant: TileVariant,
+    pub capture_progress: i32,
 }

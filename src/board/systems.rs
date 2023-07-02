@@ -1,4 +1,4 @@
-use std::{cmp, f32::consts::PI, fmt::LowerHex};
+use std::f32::consts::PI;
 
 use bevy::{
     prelude::*,
@@ -6,7 +6,10 @@ use bevy::{
     sprite::MaterialMesh2dBundle,
 };
 
-use crate::hexagon::{hexes_in_range, Cube};
+use crate::{
+    hexagon::{cube_distance, hexes_in_range, Cube},
+    units::components::Unit,
+};
 
 use super::{
     components::{HexTile, TileVariant},
@@ -73,6 +76,7 @@ pub fn build_board(
         commands.spawn(pointy_top_hex_mesh.clone()).insert(HexTile {
             coordinate: coord,
             variant: TileVariant::Neutral,
+            capture_progress: 0,
         });
     }
 

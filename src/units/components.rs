@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::hexagon::{hex_to_pixel, hexes_in_range, hexes_in_ring, Cube};
+use crate::hexagon::{cube_scale, hex_to_pixel, hexes_in_range, hexes_in_ring, Cube, cube_scale_vec};
 
 pub enum UnitDefault {
     Archer,
@@ -8,18 +8,20 @@ pub enum UnitDefault {
     Scout,
     Knight,
     Catapult,
+    Sniper,
     Newt,
 }
 
 impl UnitDefault {
     pub fn sprite_location(&self) -> String {
         match self {
-            UnitDefault::Archer => "sprites/nl.png".to_string(),
-            UnitDefault::BladeDancer => "sprites/nl.png".to_string(),
-            UnitDefault::Scout => "sprites/pl.png".to_string(),
-            UnitDefault::Knight => "sprites/rl.png".to_string(),
-            UnitDefault::Catapult => "sprites/rl.png".to_string(),
-            UnitDefault::Newt => "sprites/kl.png".to_string(),
+            UnitDefault::Archer => "sprites/bow.png".to_string(),
+            UnitDefault::BladeDancer => "sprites/knife.png".to_string(),
+            UnitDefault::Scout => "sprites/boot.png".to_string(),
+            UnitDefault::Knight => "sprites/shield.png".to_string(),
+            UnitDefault::Catapult => "sprites/comet.png".to_string(),
+            UnitDefault::Sniper => "sprites/gun.png".to_string(),
+            UnitDefault::Newt => "sprites/frog.png".to_string(),
         }
     }
 }
@@ -40,6 +42,12 @@ pub enum Keyword {
     // if you get a kill, it doesnt take
     // your attack action
     Executioner,
+    // gets move action only when countdown
+    // hits 0
+    Slow { max_countdown: i32, countdown: i32 },
+    // Attacking this unit does
+    // not take the attack action
+    Despised,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -147,13 +155,27 @@ impl Unit {
                 move_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
                 attack_hexes: hexes_in_ring(3, Cube::axial_new(0, 0)),
             },
+            UnitDefault::Sniper => Unit {
+                position,
+                ally,
+                max_health: 1,
+                health: 1,
+                damage: 10,
+                keywords: vec![Keyword::Slow {
+                    max_countdown: 2,
+                    countdown: 2,
+                }],
+                actions,
+                move_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
+                attack_hexes: cube_scale_vec(Cube::CUBE_DIRECTION_VECTORS.to_vec(), 5),
+            },
             UnitDefault::Newt => Unit {
                 position,
                 ally,
                 max_health: 10,
                 health: 6,
                 damage: 2,
-                keywords: vec![Keyword::StrikeBack, Keyword::Regeneration(2)],
+                keywords: vec![Keyword::StrikeBack, Keyword::Regeneration(2), Keyword::Despised],
                 actions,
                 move_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
                 attack_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
@@ -179,7 +201,30 @@ impl Unit {
         self.health += regen.unwrap_or(&0);
         self.health = self.health.min(self.max_health);
 
-        self.actions = vec![Action::Move, Action::Attack];
+        let slow = self.keywords.iter_mut().find_map(|k| match k {
+            Keyword::Slow {
+                max_countdown,
+                countdown,
+            } => Some((max_countdown, countdown)),
+            _ => None,
+        });
+
+        let Some((max_countdown, countdown)) = slow else {
+            self.actions = vec![Action::Move, Action::Attack];
+            return;
+        };
+
+        if self.actions.contains(&Action::Move) {
+            self.actions = vec![Action::Move, Action::Attack];
+            return;
+        }
+
+        if *countdown == 0 {
+            self.actions = vec![Action::Move, Action::Attack];
+            *countdown = *max_countdown;
+        } else {
+            *countdown -= 1;
+        }
     }
 
     fn take_damage(&mut self, damage: i32) -> bool {
@@ -197,10 +242,10 @@ impl Unit {
     pub fn attack(&mut self, my_transform: &mut Transform, opponent: &mut Unit) {
         let killed = opponent.take_damage(self.damage);
 
-        if !(killed && self.keywords.contains(&Keyword::Executioner)) {
+        if !((killed && self.keywords.contains(&Keyword::Executioner)) || opponent.keywords.contains(&Keyword::Despised)) {
             self.remove_action(Action::Attack);
         }
-
+        
         if !killed && opponent.keywords.contains(&Keyword::StrikeBack) {
             self.take_damage(opponent.damage);
         }

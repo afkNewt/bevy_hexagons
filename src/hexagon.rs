@@ -49,6 +49,10 @@ impl Cube {
         return Cube::cube_new(self.q + vec.q, self.r + vec.r, self.s + vec.s);
     }
 
+    pub fn cub_subtract(self, hex: Cube) -> Cube {
+        return Cube::cube_new(self.q - hex.q, self.r - hex.r, self.s - hex.s);
+    }
+
     pub fn cube_neighbor(self, direction: usize) -> Cube {
         return self.cube_add(Self::cube_direction(direction));
     }
@@ -150,7 +154,26 @@ pub fn hexes_in_range(radius: i32, center: Cube) -> Vec<Cube> {
         .collect()
 }
 
-fn cube_scale(hex: Cube, factor: i32) -> Cube {
+pub fn cube_distance(hex1: Cube, hex2: Cube) -> i32 {
+    let vec = hex1.cub_subtract(hex2);
+    return vec.q.abs().max(vec.r.abs()).max(vec.s.abs());
+}
+
+pub fn cube_scale_vec(hexes: Vec<Cube>, factor: i32) -> Vec<Cube> {
+    let mut output = Vec::new();
+
+    for hex in hexes {
+        output.push(Cube::cube_new(
+            hex.q * factor,
+            hex.r * factor,
+            hex.s * factor,
+        ));
+    }
+
+    return output;
+}
+
+pub fn cube_scale(hex: Cube, factor: i32) -> Cube {
     Cube::cube_new(hex.q * factor, hex.r * factor, hex.s * factor)
 }
 

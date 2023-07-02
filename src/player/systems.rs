@@ -4,8 +4,9 @@ use crate::{
     board::{
         components::{HexTile, TileVariant},
         resources::HexColors,
+        HEX_RADIUS,
     },
-    hexagon::cursor_to_hex,
+    hexagon::{cube_distance, cursor_to_hex},
     units::components::Unit,
 };
 
@@ -51,7 +52,7 @@ pub fn pass_turn(
     mut turn_counter: ResMut<TurnCounter>,
     mut player_coin_count: ResMut<PlayerCoins>,
     mut units: Query<&mut Unit>,
-    hex_tiles: Query<&HexTile>,
+    hex_tiles: Query<&mut HexTile>,
     keys: Res<Input<KeyCode>>,
 ) {
     if !keys.just_released(KeyCode::Space) {
@@ -73,6 +74,8 @@ pub fn pass_turn(
     player_coin_count.0 += 2;
 
     turn_counter.0 += 1;
+
+    update_capture_progress(hex_tiles, units.to_readonly());
 }
 
 pub fn highlight_hovered_hex(
@@ -106,5 +109,82 @@ pub fn highlight_hovered_hex(
             TileVariant::EnemyCapital => colors.enemy_capital_hovered.clone(),
             _ => colors.neutral_hovered.clone(),
         };
+    }
+}
+
+fn update_capture_progress(mut tiles: Query<&mut HexTile>, units: Query<&Unit>) {
+    // TODO: this doesnt really work correctly
+    // but its hard to debug, so
+    // I will fix it when I have ui to show
+    // capture progress setup
+
+    let ally_capital = tiles.iter().find(|t| t.variant == TileVariant::AllyCapital);
+    let enemy_capital = tiles
+        .iter()
+        .find(|t| t.variant == TileVariant::EnemyCapital);
+
+    if ally_capital.is_none() || enemy_capital.is_none() {
+        return;
+    }
+
+    let ally_capital_pos = ally_capital.unwrap().coordinate;
+    let enemy_capital_pos = enemy_capital.unwrap().coordinate;
+
+    // add capture progress
+    // on unit tiles
+    for mut tile in &mut tiles {
+        let unit_on_tile = units.iter().find(|u| u.position == tile.coordinate);
+
+        let Some(unit) = unit_on_tile else {
+            continue;
+        };
+
+        if unit.ally
+            && (tile.variant == TileVariant::AllyCapital || tile.variant == TileVariant::AllyLand)
+        {
+            continue;
+        }
+
+        if !unit.ally
+            && (tile.variant == TileVariant::EnemyCapital || tile.variant == TileVariant::EnemyLand)
+        {
+            continue;
+        }
+
+        let progress = if unit.ally { 2 } else { -2 };
+        tile.capture_progress += progress;
+    }
+
+    // reduce capture progress
+    // on all neutral tiles
+    for mut tile in &mut tiles {
+        if tile.capture_progress == 0 || tile.variant != TileVariant::Neutral {
+            continue;
+        }
+
+        tile.capture_progress = (tile.capture_progress.abs() - 1) * tile.capture_progress.signum();
+    }
+
+    // check for captured tiles
+    for mut tile in &mut tiles {
+        match tile.capture_progress.signum() {
+            1 => {
+                let capture_threshold = cube_distance(ally_capital_pos, tile.coordinate);
+                if tile.capture_progress >= capture_threshold {
+                    tile.variant = TileVariant::AllyLand;
+                    tile.capture_progress = HEX_RADIUS * 2 - capture_threshold;
+                    println!("{}", tile.capture_progress);
+                }
+            }
+            -1 => {
+                let capture_threshold = cube_distance(enemy_capital_pos, tile.coordinate);
+                if tile.capture_progress.abs() >= capture_threshold {
+                    tile.variant = TileVariant::EnemyLand;
+                    tile.capture_progress = -(HEX_RADIUS * 2 - capture_threshold);
+                    println!("{}", tile.capture_progress);
+                }
+            }
+            _ => {}
+        }
     }
 }

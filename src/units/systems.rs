@@ -19,14 +19,14 @@ pub fn test_spawn_unit(mut commands: Commands, asset_server: Res<AssetServer>) {
         &mut commands,
         &asset_server,
         Cube::axial_new(-2, 4),
-        UnitDefault::BladeDancer,
+        UnitDefault::Knight,
         true,
     );
     spawn_unit(
         &mut commands,
         &asset_server,
         Cube::axial_new(-4, 2),
-        UnitDefault::Scout,
+        UnitDefault::Newt,
         false,
     );
     spawn_unit(
@@ -50,7 +50,7 @@ fn spawn_unit(
         .spawn(SpriteBundle {
             transform: Transform {
                 translation: Vec3::new(x, y, 1.),
-                scale: Vec3::splat(0.075),
+                scale: Vec3::splat(0.35),
                 ..Default::default()
             },
             texture: asset_server.load(unit.sprite_location()),
@@ -127,6 +127,11 @@ pub fn check_for_unit_movement(
     let Ok((unit, _unit_transform, _unit_id)) = units.get(selected_entity) else {
         return;
     };
+
+    // make sure the entity is an ally
+    if !unit.ally {
+        return;
+    }
 
     // make sure the click was inside the board
     if !hexes_in_range(HEX_RADIUS, Cube::axial_new(0, 0)).contains(&hovered_hex) {
