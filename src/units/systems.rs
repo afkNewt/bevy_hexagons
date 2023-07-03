@@ -25,7 +25,7 @@ pub fn test_spawn_unit(mut commands: Commands, asset_server: Res<AssetServer>) {
     spawn_unit(
         &mut commands,
         &asset_server,
-        Cube::axial_new(-4, 2),
+        Cube::axial_new(-2, 1),
         UnitDefault::Newt,
         false,
     );

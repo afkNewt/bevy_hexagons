@@ -4,7 +4,7 @@ use crate::{board::components::HexTile, hexagon::cursor_to_hex, player::resource
 
 use super::components::{CoinText, TileText};
 
-pub fn generate_tile_variant_text(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn generate_tile_info_text(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         // Create a TextBundle that has a Text with a list of sections.
         TextBundle::from_sections([
@@ -21,12 +21,25 @@ pub fn generate_tile_variant_text(mut commands: Commands, asset_server: Res<Asse
                 font_size: 40.0,
                 color: Color::GOLD,
             }),
+            TextSection::new(
+                "\nCapture: ",
+                TextStyle {
+                    font: asset_server.load("fonts/arial.ttf"),
+                    font_size: 40.0,
+                    color: Color::WHITE,
+                },
+            ),
+            TextSection::from_style(TextStyle {
+                font: asset_server.load("fonts/arial.ttf"),
+                font_size: 40.0,
+                color: Color::GOLD,
+            }),
         ]),
         TileText,
     ));
 }
 
-pub fn update_tile_variant_text(
+pub fn update_tile_info_text(
     windows: Query<&Window>,
     hexes: Query<&HexTile>,
     mut tile_text: Query<&mut Text, With<TileText>>,
@@ -35,16 +48,19 @@ pub fn update_tile_variant_text(
         return;
     };
 
-    let mut hex_info = "None".to_string();
+    let mut hex_coord = "None".to_string();
+    let mut hex_capture = "??".to_string();
     for hex in &hexes {
         if hex.coordinate == hovered_hex {
-            hex_info = format!("{:?} {}", hex.variant, hex.coordinate);
+            hex_coord = format!("{:?} {}", hex.variant, hex.coordinate);
+            hex_capture = format!("{}", hex.capture_progress);
         }
     }
 
     for mut text in &mut tile_text {
         // Update the value of the second section
-        text.sections[1].value = hex_info.to_string();
+        text.sections[1].value = hex_coord.to_string();
+        text.sections[3].value = hex_capture.to_string();
     }
 }
 
