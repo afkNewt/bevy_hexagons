@@ -1,6 +1,6 @@
 use std::{cmp, fmt};
 
-use bevy::{a11y::accesskit::Vec2, prelude::*};
+use bevy::prelude::*;
 
 use crate::board::{HEX_GAP, HEX_SIZE};
 

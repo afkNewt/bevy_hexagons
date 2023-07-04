@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::hexagon::{cube_scale, hex_to_pixel, hexes_in_range, hexes_in_ring, Cube, cube_scale_vec};
+use crate::hexagon::{hex_to_pixel, hexes_in_range, hexes_in_ring, Cube, cube_scale_vec};
 
 pub enum UnitDefault {
     Archer,

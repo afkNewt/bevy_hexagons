@@ -1,15 +1,8 @@
 use std::f32::consts::PI;
 
-use bevy::{
-    prelude::*,
-    render::{mesh::Indices, render_resource::PrimitiveTopology},
-    sprite::MaterialMesh2dBundle,
-};
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
-use crate::{
-    hexagon::{cube_distance, hexes_in_range, Cube},
-    units::components::Unit,
-};
+use crate::hexagon::{hexes_in_range, Cube};
 
 use super::{
     components::{HexTile, TileVariant},
@@ -34,33 +27,11 @@ pub fn build_board(
     mut meshes: ResMut<Assets<Mesh>>,
     colors: Res<HexColors>,
 ) {
-    // vertex positions for a pointy topped hexagon
-    // arranged like so
-    //     1
-    // 6       2
-    //     0
-    // 5       3
-    //     4
-
-    let mut v_pos = vec![[0., 0., 0.]];
-    for i in 0..6 {
-        let angle_deg = 60. * i as f32 - 30.;
-        let angle_rad: f32 = PI / 180. * angle_deg;
-        v_pos.push([angle_rad.cos(), angle_rad.sin(), 0.]);
-    }
-
-    let mut triangle = Mesh::new(PrimitiveTopology::TriangleList);
-    triangle.insert_attribute(Mesh::ATTRIBUTE_POSITION, v_pos);
-    triangle.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 0.0, 0.1]; 7]);
-    triangle.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0., 0.]; 7]);
-    triangle.set_indices(Some(Indices::U32(vec![
-        0, 2, 1, 0, 3, 2, 0, 4, 3, 0, 5, 4, 0, 6, 5, 0, 1, 6,
-    ])));
-
     let mut pointy_top_hex_mesh = MaterialMesh2dBundle {
-        mesh: meshes.add(triangle).into(),
+        mesh: meshes
+            .add(shape::RegularPolygon::new(HEX_SIZE, 6).into())
+            .into(),
         material: colors.neutral.clone(),
-        transform: Transform::from_scale(Vec3::new(HEX_SIZE, HEX_SIZE, 0.)),
         ..default()
     };
 
@@ -80,29 +51,6 @@ pub fn build_board(
         });
     }
 
-    // vertex positions for a pointy topped hexagon
-    // arranged like so
-    //   1   2
-    //
-    // 6   0   3
-    //
-    //   5   4
-
-    let mut v_pos = vec![[0., 0., 0.]];
-    for i in 0..6 {
-        let angle_deg = 60. * i as f32;
-        let angle_rad = PI / 180. * angle_deg;
-        v_pos.push([angle_rad.cos(), angle_rad.sin(), 0.]);
-    }
-
-    let mut triangle = Mesh::new(PrimitiveTopology::TriangleList);
-    triangle.insert_attribute(Mesh::ATTRIBUTE_POSITION, v_pos);
-    triangle.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 0.0, 0.1]; 7]);
-    triangle.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0., 0.]; 7]);
-    triangle.set_indices(Some(Indices::U32(vec![
-        0, 2, 1, 0, 3, 2, 0, 4, 3, 0, 5, 4, 0, 6, 5, 0, 1, 6,
-    ])));
-
     // magic number is the x of vertex translation
     // with index 2 on a pointy hex
     let magic_number: f32 = (PI / 180. * 30.).cos();
@@ -110,9 +58,11 @@ pub fn build_board(
         * magic_number;
 
     let flat_top_hex_mesh = MaterialMesh2dBundle {
-        mesh: meshes.add(triangle).into(),
+        mesh: meshes
+            .add(shape::RegularPolygon::new(scale, 6).into())
+            .into(),
         material: colors.backround_hex.clone(),
-        transform: Transform::from_scale(Vec3::new(scale, scale, 0.)),
+        transform: Transform::from_rotation(Quat::from_rotation_z(30_f32.to_radians())),
         ..default()
     };
 
