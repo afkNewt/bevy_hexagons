@@ -31,7 +31,7 @@ pub enum Keyword {
     // amount of damage reduced
     // for every hit (like repulsion armor)
     Armor(i32),
-    // Heals health every turn
+    // Restores health every turn
     Regeneration(i32),
     // When attacked, will strike
     // the attacker
@@ -74,28 +74,6 @@ pub struct Unit {
 }
 
 impl Unit {
-    pub fn new(
-        position: Cube,
-        ally: bool,
-        health: i32,
-        damage: i32,
-        keywords: Vec<Keyword>,
-        relative_move_hexes: Vec<Cube>,
-        relative_attack_hexes: Vec<Cube>,
-    ) -> Self {
-        Self {
-            position,
-            ally,
-            max_health: health,
-            health,
-            damage,
-            keywords,
-            actions: vec![Action::Move],
-            move_hexes: relative_move_hexes,
-            attack_hexes: relative_attack_hexes,
-        }
-    }
-
     pub fn new_default(default: UnitDefault, position: Cube, ally: bool) -> Self {
         let actions = vec![Action::Move];
 

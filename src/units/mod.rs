@@ -17,12 +17,12 @@ pub struct UnitsPlugin;
 impl Plugin for UnitsPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SelectedUnit(None))
-            .add_startup_system(test_spawn_unit.in_base_set(StartupSet::PostStartup))
-            .add_systems((
+            .add_systems(PostStartup, test_spawn_unit)
+            .add_systems(Update, (
+                check_for_unit_movement.before(check_for_unit_selection),
                 check_for_unit_selection,
                 despawn_dead_units,
                 highlight_unit_hex,
-                check_for_unit_movement.before(check_for_unit_selection),
             ));
     }
 }

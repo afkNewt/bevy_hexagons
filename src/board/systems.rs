@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
-use crate::hexagon::{hexes_in_range, Cube};
+use crate::hexagon::{hex_to_pixel, hexes_in_range, Cube};
 
 use super::{
     components::{HexTile, TileVariant},
@@ -35,14 +35,11 @@ pub fn build_board(
         ..default()
     };
 
-    let padded_size = HEX_SIZE + HEX_GAP;
-
     let hex_coords = hexes_in_range(HEX_RADIUS, Cube::axial_new(0, 0));
     for coord in hex_coords {
         // https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
-        let x = 3_f32.sqrt() * coord.q as f32 + 3_f32.sqrt() / 2. * coord.r as f32;
-        let y = 3. / 2. * coord.r as f32;
-        pointy_top_hex_mesh.transform.translation = Vec3::new(x * padded_size, y * padded_size, 1.);
+        let (x, y) = hex_to_pixel(coord);
+        pointy_top_hex_mesh.transform.translation = Vec3::new(x, y, 1.);
 
         commands.spawn(pointy_top_hex_mesh.clone()).insert(HexTile {
             coordinate: coord,
@@ -51,9 +48,7 @@ pub fn build_board(
         });
     }
 
-    // magic number is the x of vertex translation
-    // with index 2 on a pointy hex
-    let magic_number: f32 = (PI / 180. * 30.).cos();
+    let magic_number = (PI / 180. * 30.).cos();
     let scale = ((HEX_RADIUS as f32 * 2. + 1.8) * HEX_SIZE + HEX_RADIUS as f32 * 2. * HEX_GAP)
         * magic_number;
 

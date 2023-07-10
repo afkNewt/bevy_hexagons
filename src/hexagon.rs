@@ -119,7 +119,7 @@ pub fn cursor_to_hex(windows: Query<&Window>) -> Option<Cube> {
     };
 
     let x = cursor_pos.x - primary.resolution.width() / 2.;
-    let y = cursor_pos.y - primary.resolution.height() / 2.;
+    let y = (cursor_pos.y - primary.resolution.height() / 2.) * -1.;
 
     return Some(pixel_to_hex(x, y));
 }

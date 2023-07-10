@@ -14,11 +14,7 @@ pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(load_colors.in_base_set(StartupSet::PreStartup))
-            .add_startup_system(
-                build_board
-                    .in_base_set(StartupSet::Startup)
-                    .after(load_colors),
-            );
+        app.add_systems(PreStartup, load_colors)
+            .add_systems(Startup, build_board);
     }
 }

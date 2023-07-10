@@ -17,12 +17,12 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
         .add_plugins(DefaultPlugins)
-        .add_plugin(BoardPlugin)
-        .add_plugin(EnemyPlugin)
-        .add_plugin(PlayerPlugin)
-        .add_plugin(UnitsPlugin)
-        .add_plugin(TextPlugin)
-        .add_startup_system(setup)
+        .add_plugins(BoardPlugin)
+        .add_plugins(EnemyPlugin)
+        .add_plugins(PlayerPlugin)
+        .add_plugins(UnitsPlugin)
+        .add_plugins(TextPlugin)
+        .add_systems(Startup, setup)
         .run();
 }
 

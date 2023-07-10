@@ -87,6 +87,7 @@ pub fn highlight_hovered_hex(
     };
 
     for (hex, mut color_mat) in &mut hexes {
+
         *color_mat = match hex.variant {
             TileVariant::Neutral => colors.neutral.clone(),
             TileVariant::AllyCapital => colors.ally_capital.clone(),

@@ -15,6 +15,6 @@ impl Plugin for PlayerPlugin {
         app.insert_resource(AllyCapital { position: None })
             .insert_resource(TurnCounter(0))
             .insert_resource(PlayerCoins(10))
-            .add_systems((place_ally_capital, highlight_hovered_hex, pass_turn));
+            .add_systems(Update, (place_ally_capital, highlight_hovered_hex, pass_turn));
     }
 }
