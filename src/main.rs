@@ -15,13 +15,9 @@ mod units;
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
+        .insert_resource(ClearColor(Color::rgb_u8(20, 20, 20)))
         .add_plugins(DefaultPlugins)
-        .add_plugins(BoardPlugin)
-        .add_plugins(EnemyPlugin)
-        .add_plugins(PlayerPlugin)
-        .add_plugins(UnitsPlugin)
-        .add_plugins(TextPlugin)
+        .add_plugins((BoardPlugin, EnemyPlugin, PlayerPlugin, UnitsPlugin, TextPlugin))
         .add_systems(Startup, setup)
         .run();
 }

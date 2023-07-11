@@ -88,12 +88,7 @@ pub fn highlight_hovered_hex(
 
     for (hex, mut color_mat) in &mut hexes {
 
-        *color_mat = match hex.variant {
-            TileVariant::Neutral => colors.neutral.clone(),
-            TileVariant::AllyCapital => colors.ally_capital.clone(),
-            TileVariant::EnemyCapital => colors.enemy_capital.clone(),
-            _ => colors.neutral.clone(),
-        };
+        *color_mat = hex.base_color(&colors);
 
         if hex.coordinate.q != hovered_hex.q {
             continue;
@@ -103,12 +98,17 @@ pub fn highlight_hovered_hex(
             continue;
         }
 
-        *color_mat = match hex.variant {
-            TileVariant::Neutral => colors.neutral_hovered.clone(),
-            TileVariant::AllyCapital => colors.ally_capital_hovered.clone(),
-            TileVariant::EnemyCapital => colors.enemy_capital_hovered.clone(),
-            _ => colors.neutral_hovered.clone(),
-        };
+        *color_mat = hex.strong_highlight(&colors);
+    }
+}
+
+pub fn remove_tile_highlights(
+    mut hexes: Query<(&HexTile, &mut Handle<ColorMaterial>)>,
+    colors: Res<HexColors>,
+) {
+    for (hex, mut color_mat) in &mut hexes {
+
+        *color_mat = hex.base_color(&colors);
     }
 }
 

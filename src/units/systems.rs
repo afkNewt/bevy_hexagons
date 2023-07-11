@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     board::{
-        components::{HexTile, TileVariant},
+        components::HexTile,
         resources::HexColors,
         HEX_RADIUS,
     },
@@ -190,9 +190,6 @@ pub fn highlight_unit_hex(
     mut hexes: Query<(&HexTile, &mut Handle<ColorMaterial>)>,
     colors: Res<HexColors>,
 ) {
-    // TODO: only highlight the hex if we have
-    // the relevant action ready
-
     let Some(selected_entity) = selected_unit.0 else {
         return;
     };
@@ -201,26 +198,27 @@ pub fn highlight_unit_hex(
         return;
     };
 
-    let attack = unit.absolute_attack_hexes();
-    let movement = unit.absolute_move_hexes();
+    let mut highlight_hexes = Vec::new();
+
+    if unit.actions.contains(&Action::Attack) {
+        highlight_hexes.append(&mut unit.absolute_attack_hexes());
+    };
+
+    if unit.actions.contains(&Action::Move) {
+        highlight_hexes.append(&mut unit.absolute_move_hexes());
+    };
 
     for (hex, mut color_mat) in &mut hexes {
-        *color_mat = match hex.variant {
-            TileVariant::Neutral => colors.neutral.clone(),
-            TileVariant::AllyCapital => colors.ally_capital.clone(),
-            TileVariant::EnemyCapital => colors.enemy_capital.clone(),
-            _ => colors.neutral.clone(),
-        };
+        *color_mat = hex.base_color(&colors);
 
-        if !attack.contains(&hex.coordinate) && !movement.contains(&hex.coordinate) {
+        if unit.position == hex.coordinate {
+            *color_mat = hex.strong_highlight(&colors);
             continue;
         }
 
-        *color_mat = match hex.variant {
-            TileVariant::Neutral => colors.neutral_hovered.clone(),
-            TileVariant::AllyCapital => colors.ally_capital_hovered.clone(),
-            TileVariant::EnemyCapital => colors.enemy_capital_hovered.clone(),
-            _ => colors.neutral_hovered.clone(),
-        };
+        if highlight_hexes.contains(&hex.coordinate){
+            *color_mat = hex.weak_highlight(&colors);
+            continue;
+        }
     }
 }

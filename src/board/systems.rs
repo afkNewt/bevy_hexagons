@@ -12,13 +12,19 @@ use super::{
 
 pub fn load_colors(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
     commands.insert_resource(HexColors {
-        backround_hex: materials.add(ColorMaterial::from(Color::rgb_u8(30, 30, 30))),
+        backround_hex: materials.add(ColorMaterial::from(Color::rgb_u8(25, 25, 25))),
+
         neutral: materials.add(ColorMaterial::from(Color::rgb_u8(40, 40, 40))),
-        neutral_hovered: materials.add(ColorMaterial::from(Color::rgb_u8(50, 50, 50))),
-        ally_capital: materials.add(ColorMaterial::from(Color::rgb_u8(60, 60, 255))),
-        ally_capital_hovered: materials.add(ColorMaterial::from(Color::rgb_u8(100, 100, 255))),
-        enemy_capital: materials.add(ColorMaterial::from(Color::rgb_u8(255, 60, 60))),
-        enemy_capital_hovered: materials.add(ColorMaterial::from(Color::rgb_u8(255, 100, 100))),
+        neutral_weak_highlight: materials.add(ColorMaterial::from(Color::rgb_u8(60, 60, 60))),
+        neutral_strong_highlight: materials.add(ColorMaterial::from(Color::rgb_u8(90, 90, 90))),
+
+        ally_capital: materials.add(ColorMaterial::from(Color::rgb_u8(70, 70, 200))),
+        ally_capital_weak_highlight: materials.add(ColorMaterial::from(Color::rgb_u8(100, 100, 240))),
+        ally_capital_strong_highlight: materials.add(ColorMaterial::from(Color::rgb_u8(150, 150, 255))),
+
+        enemy_capital: materials.add(ColorMaterial::from(Color::rgb_u8(200, 70, 70))),
+        enemy_capital_weak_highlight: materials.add(ColorMaterial::from(Color::rgb_u8(240, 100, 100))),
+        enemy_capital_strong_highlight: materials.add(ColorMaterial::from(Color::rgb_u8(255, 150, 150))),
     });
 }
 
