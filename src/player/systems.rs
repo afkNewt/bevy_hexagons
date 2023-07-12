@@ -77,41 +77,6 @@ pub fn pass_turn(
     update_capture_progress(hex_tiles, units.to_readonly());
 }
 
-pub fn highlight_hovered_hex(
-    windows: Query<&Window>,
-    mut hexes: Query<(&HexTile, &mut Handle<ColorMaterial>)>,
-    colors: Res<HexColors>,
-) {
-    let Some(hovered_hex) = cursor_to_hex(windows) else {
-        return;
-    };
-
-    for (hex, mut color_mat) in &mut hexes {
-
-        *color_mat = hex.base_color(&colors);
-
-        if hex.coordinate.q != hovered_hex.q {
-            continue;
-        }
-
-        if hex.coordinate.r != hovered_hex.r {
-            continue;
-        }
-
-        *color_mat = hex.strong_highlight(&colors);
-    }
-}
-
-pub fn remove_tile_highlights(
-    mut hexes: Query<(&HexTile, &mut Handle<ColorMaterial>)>,
-    colors: Res<HexColors>,
-) {
-    for (hex, mut color_mat) in &mut hexes {
-
-        *color_mat = hex.base_color(&colors);
-    }
-}
-
 fn update_capture_progress(mut tiles: Query<&mut HexTile>, units: Query<&Unit>) {
     let ally_capital = tiles.iter().find(|t| t.variant == TileVariant::AllyCapital);
     let enemy_capital = tiles
