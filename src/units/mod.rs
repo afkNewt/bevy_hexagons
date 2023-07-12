@@ -3,13 +3,13 @@ use bevy::prelude::*;
 use self::{
     resources::SelectedUnit,
     systems::{
-        check_for_unit_movement, check_for_unit_selection, despawn_dead_units, highlight_unit_hex,
+        check_for_unit_movement, check_for_unit_selection, despawn_dead_units,
         test_spawn_unit,
     },
 };
 
 pub mod components;
-mod resources;
+pub mod resources;
 mod systems;
 
 pub struct UnitsPlugin;
@@ -22,7 +22,6 @@ impl Plugin for UnitsPlugin {
                 check_for_unit_movement.before(check_for_unit_selection),
                 check_for_unit_selection,
                 despawn_dead_units,
-                highlight_unit_hex,
             ));
     }
 }
