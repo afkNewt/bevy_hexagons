@@ -2,7 +2,7 @@ use std::{cmp, fmt};
 
 use bevy::prelude::*;
 
-use crate::board::{HEX_GAP, HEX_SIZE};
+use crate::board::{HEX_GAP, HEX_RADIUS, HEX_SIZE};
 
 #[derive(Reflect, PartialEq, Clone, Copy)]
 pub struct Cube {
@@ -42,19 +42,19 @@ impl Cube {
     ];
 
     pub fn cube_direction(direction: usize) -> Cube {
-        return Cube::CUBE_DIRECTION_VECTORS[direction];
+        Cube::CUBE_DIRECTION_VECTORS[direction]
     }
 
     pub fn cube_add(self, vec: Cube) -> Cube {
-        return Cube::cube_new(self.q + vec.q, self.r + vec.r, self.s + vec.s);
+        Cube::cube_new(self.q + vec.q, self.r + vec.r, self.s + vec.s)
     }
 
     pub fn cub_subtract(self, hex: Cube) -> Cube {
-        return Cube::cube_new(self.q - hex.q, self.r - hex.r, self.s - hex.s);
+        Cube::cube_new(self.q - hex.q, self.r - hex.r, self.s - hex.s)
     }
 
     pub fn cube_neighbor(self, direction: usize) -> Cube {
-        return self.cube_add(Self::cube_direction(direction));
+        self.cube_add(Self::cube_direction(direction))
     }
 
     pub fn cube_neighbors(self) -> [Cube; 6] {
@@ -121,6 +121,12 @@ pub fn cursor_to_hex(windows: Query<&Window>) -> Option<Cube> {
     let x = cursor_pos.x - primary.resolution.width() / 2.;
     let y = (cursor_pos.y - primary.resolution.height() / 2.) * -1.;
 
+    let mouse_pos = pixel_to_hex(x, y);
+
+    if !hexes_in_range(HEX_RADIUS, Cube::axial_new(0, 0)).contains(&mouse_pos) {
+        return None;
+    }
+
     return Some(pixel_to_hex(x, y));
 }
 
@@ -160,17 +166,10 @@ pub fn cube_distance(hex1: Cube, hex2: Cube) -> i32 {
 }
 
 pub fn cube_scale_vec(hexes: Vec<Cube>, factor: i32) -> Vec<Cube> {
-    let mut output = Vec::new();
-
-    for hex in hexes {
-        output.push(Cube::cube_new(
-            hex.q * factor,
-            hex.r * factor,
-            hex.s * factor,
-        ));
-    }
-
-    return output;
+    hexes
+        .iter()
+        .map(|c| Cube::cube_new(c.q * factor, c.r * factor, c.s * factor))
+        .collect()
 }
 
 pub fn cube_scale(hex: Cube, factor: i32) -> Cube {

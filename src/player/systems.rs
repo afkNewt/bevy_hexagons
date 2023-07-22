@@ -1,10 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    board::{
-        components::{HexTile, TileVariant},
-        resources::HexColors,
-    },
+    board::components::{HexTile, TileVariant},
     hexagon::{cube_distance, cursor_to_hex, Cube},
     units::components::Unit,
 };

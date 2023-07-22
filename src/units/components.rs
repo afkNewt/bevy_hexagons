@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::hexagon::{hex_to_pixel, hexes_in_range, hexes_in_ring, Cube, cube_scale_vec};
+use crate::hexagon::{cube_scale_vec, hex_to_pixel, hexes_in_range, hexes_in_ring, Cube};
 
 pub enum UnitDefault {
     Archer,
@@ -153,7 +153,11 @@ impl Unit {
                 max_health: 10,
                 health: 6,
                 damage: 2,
-                keywords: vec![Keyword::StrikeBack, Keyword::Regeneration(2), Keyword::Despised],
+                keywords: vec![
+                    Keyword::StrikeBack,
+                    Keyword::Regeneration(2),
+                    Keyword::Despised,
+                ],
                 actions,
                 move_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
                 attack_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
@@ -220,10 +224,12 @@ impl Unit {
     pub fn attack(&mut self, my_transform: &mut Transform, opponent: &mut Unit) {
         let killed = opponent.take_damage(self.damage);
 
-        if !((killed && self.keywords.contains(&Keyword::Executioner)) || opponent.keywords.contains(&Keyword::Despised)) {
+        if !((killed && self.keywords.contains(&Keyword::Executioner))
+            || opponent.keywords.contains(&Keyword::Despised))
+        {
             self.remove_action(Action::Attack);
         }
-        
+
         if !killed && opponent.keywords.contains(&Keyword::StrikeBack) {
             self.take_damage(opponent.damage);
         }

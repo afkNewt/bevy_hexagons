@@ -1,11 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    board::{
-        components::HexTile,
-        resources::HexColors,
-        HEX_RADIUS,
-    },
+    board::{resources::HexColors, HEX_RADIUS},
     hexagon::{cursor_to_hex, hex_to_pixel, hexes_in_range, Cube},
 };
 
@@ -181,5 +177,14 @@ pub fn check_for_unit_movement(
         unit_transform.translation = Vec3::new(x, y, 1.0);
         unit.position = hovered_hex;
         unit.remove_action(Action::Move);
+    }
+}
+
+pub fn color_units(mut units: Query<(&Unit, &mut Sprite)>, colors: Res<HexColors>) {
+    for (unit, mut sprite) in &mut units {
+        match unit.ally {
+            true => sprite.color = colors.ally_sprite,
+            false => sprite.color = colors.enemy_sprite,
+        }
     }
 }
