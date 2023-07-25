@@ -4,7 +4,7 @@ use bevy::prelude::*;
 
 use crate::board::{HEX_GAP, HEX_RADIUS, HEX_SIZE};
 
-#[derive(Reflect, PartialEq, Clone, Copy)]
+#[derive(Reflect, PartialEq, Eq, Clone, Copy)]
 pub struct Cube {
     pub q: i32,
     pub r: i32,

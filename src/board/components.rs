@@ -13,7 +13,7 @@ pub enum TileVariant {
     EnemyCapital,
 }
 
-#[derive(Component)]
+#[derive(Component, PartialEq)]
 pub struct HexTile {
     pub coordinate: Cube,
     pub variant: TileVariant,
