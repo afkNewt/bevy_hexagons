@@ -1,13 +1,13 @@
-use bevy::{
-    prelude::*, sprite::MaterialMesh2dBundle,
-};
+use std::f32::consts::PI;
+
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
 use crate::hexagon::{hex_to_pixel, hexes_in_range, Cube};
 
 use super::{
-    components::{HexTile, TileVariant},
+    components::{Border, HexTile, TileVariant},
     resources::HexColors,
-    HEX_RADIUS, HEX_SIZE,
+    HEX_GAP, HEX_RADIUS, HEX_SIZE,
 };
 
 pub fn load_colors(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
@@ -19,6 +19,7 @@ pub fn load_colors(mut commands: Commands, mut materials: ResMut<Assets<ColorMat
         neutral_strong_highlight: materials.add(ColorMaterial::from(Color::rgb_u8(90, 90, 90))),
 
         ally_sprite: Color::rgb_u8(70, 130, 250),
+        ally_border_color: materials.add(ColorMaterial::from(Color::rgba_u8(70, 130, 250, 100))),
         ally_capital: materials.add(ColorMaterial::from(Color::rgb_u8(70, 70, 200))),
         ally_capital_weak_highlight: materials
             .add(ColorMaterial::from(Color::rgb_u8(100, 100, 240))),
@@ -26,6 +27,7 @@ pub fn load_colors(mut commands: Commands, mut materials: ResMut<Assets<ColorMat
             .add(ColorMaterial::from(Color::rgb_u8(150, 150, 255))),
 
         enemy_sprite: Color::rgb_u8(250, 130, 70),
+        enemy_border_color: materials.add(ColorMaterial::from(Color::rgba_u8(200, 70, 70, 100))),
         enemy_capital: materials.add(ColorMaterial::from(Color::rgb_u8(200, 70, 70))),
         enemy_capital_weak_highlight: materials
             .add(ColorMaterial::from(Color::rgb_u8(240, 100, 100))),
@@ -51,7 +53,7 @@ pub fn build_board(
     for coord in hex_coords {
         // https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
         let (x, y) = hex_to_pixel(coord);
-        pointy_top_hex_mesh.transform.translation = Vec3::new(x, y, 0.);
+        pointy_top_hex_mesh.transform.translation = Vec3::new(x, y, 1.);
 
         commands.spawn(pointy_top_hex_mesh.clone()).insert(HexTile {
             coordinate: coord,
@@ -60,44 +62,112 @@ pub fn build_board(
         });
     }
 
-    // let magic_number = (PI / 180. * 30.).cos();
-    // let scale = ((HEX_RADIUS as f32 * 2. + 1.8) * HEX_SIZE + HEX_RADIUS as f32 * 2. * HEX_GAP)
-    //     * magic_number;
+    let magic_number = (PI / 180. * 30.).cos();
+    let scale = ((HEX_RADIUS as f32 * 2. + 1.8) * HEX_SIZE + HEX_RADIUS as f32 * 2. * HEX_GAP)
+        * magic_number;
 
-    // let flat_top_hex_mesh = MaterialMesh2dBundle {
-    //     mesh: meshes
-    //         .add(shape::RegularPolygon::new(scale, 6).into())
-    //         .into(),
-    //     material: colors.backround_hex.clone(),
-    //     transform: Transform::from_rotation(Quat::from_rotation_z(30_f32.to_radians())),
-    //     ..default()
-    // };
+    let flat_top_hex_mesh = MaterialMesh2dBundle {
+        mesh: meshes
+            .add(shape::RegularPolygon::new(scale, 6).into())
+            .into(),
+        material: colors.backround_hex.clone(),
+        transform: Transform::from_rotation(Quat::from_rotation_z(30_f32.to_radians())),
+        ..default()
+    };
 
-    // commands.spawn(flat_top_hex_mesh);
+    commands.spawn(flat_top_hex_mesh);
 }
 
-pub fn gizmo_spawner(mut gizmos: Gizmos, hexes: Query<&HexTile>) {
-    let point_group = tile_border(hexes, vec![TileVariant::AllyLand, TileVariant::AllyCapital]);
+pub fn draw_borders(
+    mut commands: Commands,
+    hexes: Query<&HexTile>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    colors: Res<HexColors>,
+    borders: Query<Entity, With<Border>>,
+) {
+    let ally_point_group = tile_border(
+        &hexes,
+        vec![TileVariant::AllyLand, TileVariant::AllyCapital],
+    );
+    let enemy_point_group = tile_border(
+        &hexes,
+        vec![TileVariant::EnemyLand, TileVariant::EnemyCapital],
+    );
 
-    let Some(point_group) = point_group else {
+    let Some(ally_point_group) = ally_point_group else {
         return;
     };
 
-    for points in point_group {
-        gizmos.linestrip_2d(points.clone(), Color::RED);
+    let Some(enemy_point_group) = enemy_point_group else {
+        return;
+    };
 
-        for position in points {
-            gizmos.circle(
-                Vec3::new(position.x, position.y, 1.0),
-                Vec3::Z,
-                10.,
-                Color::BLUE,
-            );
+    for border in &borders {
+        commands.entity(border).despawn();
+    }
+
+    let first = ally_point_group[0][0];
+    let second = ally_point_group[0][1];
+
+    let mut border = MaterialMesh2dBundle {
+        mesh: meshes
+            .add(shape::Quad::new(Vec2::new(first.distance(second), HEX_GAP * 2.)).into())
+            .into(),
+        material: colors.ally_border_color.clone(),
+        ..default()
+    };
+
+    for points in ally_point_group {
+        for positions in points.windows(2) {
+            border.transform = Transform {
+                translation: Vec3::new(
+                    (positions[0].x + positions[1].x) / 2.,
+                    (positions[0].y + positions[1].y) / 2.,
+                    2.,
+                ),
+                rotation: Quat::from_axis_angle(
+                    Vec3::Z,
+                    Vec2::new(
+                        positions[0].x - positions[1].x,
+                        positions[0].y - positions[1].y,
+                    )
+                    .angle_between(Vec2::X)
+                        * -1.,
+                ),
+                ..Default::default()
+            };
+
+            commands.spawn(border.clone()).insert(Border);
+        }
+    }
+
+    border.material = colors.enemy_border_color.clone();
+    for points in enemy_point_group {
+        for positions in points.windows(2) {
+            border.transform = Transform {
+                translation: Vec3::new(
+                    (positions[0].x + positions[1].x) / 2.,
+                    (positions[0].y + positions[1].y) / 2.,
+                    2.,
+                ),
+                rotation: Quat::from_axis_angle(
+                    Vec3::Z,
+                    Vec2::new(
+                        positions[0].x - positions[1].x,
+                        positions[0].y - positions[1].y,
+                    )
+                    .angle_between(Vec2::X)
+                        * -1.,
+                ),
+                ..Default::default()
+            };
+
+            commands.spawn(border.clone()).insert(Border);
         }
     }
 }
 
-fn tile_border(hexes: Query<&HexTile>, variants: Vec<TileVariant>) -> Option<Vec<Vec<Vec2>>> {
+fn tile_border(hexes: &Query<&HexTile>, variants: Vec<TileVariant>) -> Option<Vec<Vec<Vec2>>> {
     let valid_tiles = hexes_in_range(HEX_RADIUS, Cube::axial_new(0, 0));
 
     let mut unsorted_points = hexes
@@ -172,5 +242,7 @@ fn tile_border(hexes: Query<&HexTile>, variants: Vec<TileVariant>) -> Option<Vec
         points.push(*points.first()?);
         point_groups.push(points);
     }
+
+    point_groups.remove(0);
     Some(point_groups)
 }

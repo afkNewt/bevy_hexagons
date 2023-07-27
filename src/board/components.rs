@@ -4,6 +4,9 @@ use crate::hexagon::Cube;
 
 use super::resources::HexColors;
 
+#[derive(Component)]
+pub struct Border;
+
 #[derive(Reflect, PartialEq, Debug)]
 pub enum TileVariant {
     Neutral,

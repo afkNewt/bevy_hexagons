@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use self::systems::{build_board, gizmo_spawner, load_colors};
+use self::systems::{build_board, draw_borders, load_colors};
 
 pub mod components;
 pub mod resources;
@@ -16,6 +16,6 @@ impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(PreStartup, load_colors)
             .add_systems(Startup, build_board)
-            .add_systems(Update, gizmo_spawner);
+            .add_systems(Update, draw_borders);
     }
 }
