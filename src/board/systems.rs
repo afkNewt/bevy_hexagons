@@ -19,6 +19,8 @@ pub fn load_colors(mut commands: Commands, mut materials: ResMut<Assets<ColorMat
         neutral_strong_highlight: materials.add(ColorMaterial::from(Color::rgb_u8(90, 90, 90))),
 
         ally_sprite: Color::rgb_u8(70, 130, 250),
+        ally_unused_action_color: Color::rgb_u8(100, 150, 250),
+        ally_used_action_color: Color::rgba_u8(100, 150, 250, 100),
         ally_border_color: materials.add(ColorMaterial::from(Color::rgba_u8(70, 130, 250, 100))),
         ally_capital: materials.add(ColorMaterial::from(Color::rgb_u8(70, 70, 200))),
         ally_capital_weak_highlight: materials
@@ -27,6 +29,8 @@ pub fn load_colors(mut commands: Commands, mut materials: ResMut<Assets<ColorMat
             .add(ColorMaterial::from(Color::rgb_u8(150, 150, 255))),
 
         enemy_sprite: Color::rgb_u8(250, 130, 70),
+        enemy_unused_action_color: Color::rgb_u8(250, 150, 100),
+        enemy_used_action_color: Color::rgba_u8(250, 150, 100, 100),
         enemy_border_color: materials.add(ColorMaterial::from(Color::rgba_u8(200, 70, 70, 100))),
         enemy_capital: materials.add(ColorMaterial::from(Color::rgb_u8(200, 70, 70))),
         enemy_capital_weak_highlight: materials

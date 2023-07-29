@@ -21,9 +21,9 @@ impl Plugin for UnitsPlugin {
             .add_systems(
                 Update,
                 (
+                    despawn_dead_units,
                     check_for_unit_movement.before(check_for_unit_selection),
                     check_for_unit_selection,
-                    despawn_dead_units,
                     color_units,
                 ),
             );

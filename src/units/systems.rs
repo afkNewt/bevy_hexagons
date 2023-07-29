@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use crate::{
-    board::{resources::HexColors, HEX_RADIUS},
-    hexagon::{cursor_to_hex, hex_to_pixel, hexes_in_range, Cube},
+    board::{resources::HexColors, HEX_SIZE},
+    hexagon::{cursor_to_hex, hex_to_pixel, Cube},
 };
 
 use super::{
@@ -46,7 +46,7 @@ fn spawn_unit(
         .spawn(SpriteBundle {
             transform: Transform {
                 translation: Vec3::new(x, y, 1.),
-                scale: Vec3::splat(0.35),
+                scale: Vec3::splat(HEX_SIZE / 110.),
                 ..Default::default()
             },
             texture: asset_server.load(unit.sprite_location()),
@@ -100,7 +100,7 @@ pub fn despawn_dead_units(mut commands: Commands, units: Query<(Entity, &Unit)>)
 
 pub fn check_for_unit_movement(
     windows: Query<&Window>,
-    buttons: Res<Input<MouseButton>>,
+    mut buttons: ResMut<Input<MouseButton>>,
     selected_unit: Res<SelectedUnit>,
     mut units: Query<(&mut Unit, &mut Transform, Entity)>,
 ) {
@@ -129,11 +129,6 @@ pub fn check_for_unit_movement(
         return;
     }
 
-    // make sure the click was inside the board
-    if !hexes_in_range(HEX_RADIUS, Cube::axial_new(0, 0)).contains(&hovered_hex) {
-        return;
-    }
-
     if unit.absolute_attack_hexes().contains(&hovered_hex) && unit.actions.contains(&Action::Attack)
     {
         let (x, y) = hex_to_pixel(hovered_hex);
@@ -152,6 +147,7 @@ pub fn check_for_unit_movement(
             let entities = units.get_many_mut([selected_entity, enemy_entity]);
             if let Ok([mut attacker, mut defender]) = entities {
                 attacker.0.attack(&mut attacker.1, &mut defender.0);
+                buttons.clear_just_released(MouseButton::Left);
                 return;
             }
         }
