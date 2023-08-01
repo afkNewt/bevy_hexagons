@@ -59,8 +59,9 @@ pub fn build_board(
 
         commands.spawn(pointy_top_hex_mesh.clone()).insert(HexTile {
             coordinate: coord,
-            variant: TileVariant::Neutral,
+            variant: TileVariant::Land,
             capture_progress: 0,
+            team: Team::Neutral,
         });
     }
 
@@ -89,11 +90,11 @@ pub fn draw_borders(
 ) {
     let ally_point_group = tile_border(
         &hexes,
-        vec![TileVariant::Captured(Team::Ally), TileVariant::Capital(Team::Ally)],
+        Team::Ally,
     );
     let enemy_point_group = tile_border(
         &hexes,
-        vec![TileVariant::Captured(Team::Enemy), TileVariant::Capital(Team::Enemy)],
+        Team::Enemy,
     );
 
     let Some(ally_point_group) = ally_point_group else {
@@ -169,12 +170,12 @@ pub fn draw_borders(
     }
 }
 
-fn tile_border(hexes: &Query<&HexTile>, variants: Vec<TileVariant>) -> Option<Vec<Vec<Vec2>>> {
+fn tile_border(hexes: &Query<&HexTile>, team: Team) -> Option<Vec<Vec<Vec2>>> {
     let valid_tiles = hexes_in_range(HEX_RADIUS, Cube::axial_new(0, 0));
 
     let mut unsorted_points = hexes
         .iter()
-        .filter(|h| variants.contains(&h.variant))
+        .filter(|h| h.team == team)
         .flat_map(|h| {
             let neighbor_coords = h.coordinate.cube_neighbors();
             let (h_x, h_y) = hex_to_pixel(h.coordinate);
@@ -192,7 +193,7 @@ fn tile_border(hexes: &Query<&HexTile>, variants: Vec<TileVariant>) -> Option<Ve
                     .iter()
                     .filter(|h| neighbor_coords.contains(&h.coordinate))
                     .filter_map(|n| {
-                        if !variants.contains(&n.variant) {
+                        if n.team != team {
                             let (n_x, n_y) = hex_to_pixel(n.coordinate);
                             return Some(Vec2::new((n_x + h_x) / 2., (n_y + h_y) / 2.));
                         }

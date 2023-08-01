@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     board::components::{HexTile, Team, TileVariant},
-    hexagon::{cube_distance, cursor_to_hex, Cube},
+    hexagon::cursor_to_hex,
     units::components::Unit,
 };
 
@@ -25,20 +25,23 @@ pub fn place_ally_capital(
     let claim_tiles = hovered_hex.cube_neighbors();
 
     for hex in &hexes {
-        if (claim_tiles.contains(&hex.coordinate) || hex.coordinate == hovered_hex)
-            && hex.variant != TileVariant::Neutral
-        {
+        if !claim_tiles.contains(&hex.coordinate) {
+            continue;
+        }
+
+        if hex.team == Team::Enemy {
             return;
         }
     }
 
     for mut hex in &mut hexes {
         if claim_tiles.contains(&hex.coordinate) {
-            hex.variant = TileVariant::Captured(Team::Ally);
+            hex.team = Team::Ally;
         }
 
         if hex.coordinate == hovered_hex {
-            hex.variant = TileVariant::Capital(Team::Ally);
+            hex.team = Team::Ally;
+            hex.variant = TileVariant::Capital;
             ally_capital.position = Some(hovered_hex);
         }
     }
@@ -56,7 +59,7 @@ pub fn pass_turn(
     }
 
     for hex_tile in &hex_tiles {
-        if hex_tile.variant == TileVariant::Capital(Team::Ally) {
+        if hex_tile.team == Team::Ally {
             player_coin_count.0 += 1;
         }
     }
@@ -75,182 +78,53 @@ pub fn pass_turn(
 }
 
 fn update_capture_progress(mut tiles: Query<&mut HexTile>, units: Query<&Unit>) {
-    let ally_capital = tiles
+    let progress_capture_tiles = tiles
         .iter()
-        .find(|t| t.variant == TileVariant::Capital(Team::Ally));
-    let enemy_capital = tiles
-        .iter()
-        .find(|t| t.variant == TileVariant::Capital(Team::Enemy));
+        .filter_map(|hex_tile| {
+            let Some(unit) = units.iter().find(|u| u.position == hex_tile.coordinate) else {
+            return None;
+        };
 
-    if ally_capital.is_none() || enemy_capital.is_none() {
-        return;
-    }
+            if unit.team == hex_tile.team {
+                return None;
+            }
 
-    let ally_capital_pos = ally_capital.unwrap().coordinate;
-    let enemy_capital_pos = enemy_capital.unwrap().coordinate;
+            let neighbors = hex_tile.coordinate.cube_neighbors();
+            if tiles
+                .iter()
+                .find(|neighbor| {
+                    neighbors.contains(&neighbor.coordinate) && unit.team == neighbor.team
+                })
+                .is_some()
+            {
+                return Some((hex_tile.coordinate, unit.team));
+            }
 
-    let ally_tiles: Vec<Cube> = tiles
-        .iter()
-        .filter(|t| {
-            t.variant == TileVariant::Captured(Team::Ally)
-                || t.variant == TileVariant::Capital(Team::Ally)
+            return None;
         })
-        .map(|t| t.coordinate)
-        .collect();
-
-    let enemy_tiles: Vec<Cube> = tiles
-        .iter()
-        .filter(|t| {
-            t.variant == TileVariant::Captured(Team::Enemy)
-                || t.variant == TileVariant::Capital(Team::Enemy)
-        })
-        .map(|t| t.coordinate)
-        .collect();
-
-    let unit_vec: Vec<(Cube, Team)> = units.iter().map(|u| (u.position, u.team)).collect();
+        .collect::<Vec<_>>();
 
     for mut tile in &mut tiles {
-        let mut progress = 0;
-
-        if unit_vec.contains(&(tile.coordinate, Team::Enemy))
-            && (tile.variant != TileVariant::Capital(Team::Enemy)
-                || tile.variant != TileVariant::Captured(Team::Enemy))
-        {
-            let mut can_progress = false;
-            for neighbor in tile.coordinate.cube_neighbors() {
-                if enemy_tiles.contains(&neighbor) {
-                    can_progress = true;
-                    break;
-                }
+        let mut capture_team = None;
+        for (coord, team) in &progress_capture_tiles {
+            if tile.coordinate != *coord {
+                continue;
             }
 
-            if can_progress {
-                progress = -1;
-            }
-        }
-
-        if unit_vec.contains(&(tile.coordinate, Team::Ally))
-            && (tile.variant != TileVariant::Capital(Team::Ally)
-                || tile.variant != TileVariant::Captured(Team::Ally))
-        {
-            let mut can_progress = false;
-            for neighbor in tile.coordinate.cube_neighbors() {
-                if ally_tiles.contains(&neighbor) {
-                    can_progress = true;
-                    break;
-                }
-            }
-
-            if can_progress {
-                progress = 1;
-            }
-        }
-
-        tile.capture_progress += progress;
-    }
-
-    for mut tile in &mut tiles {
-        if unit_vec.contains(&(tile.coordinate, Team::Enemy))
-            || unit_vec.contains(&(tile.coordinate, Team::Ally))
-        {
-            continue;
-        }
-
-        match tile.variant {
-            TileVariant::Neutral => {
-                if tile.capture_progress == 0 {
-                    continue;
-                }
-
-                tile.capture_progress =
-                    (tile.capture_progress.abs() - 1) * tile.capture_progress.signum();
-            }
-            TileVariant::Captured(Team::Ally) | TileVariant::Capital(Team::Ally) => {
-                tile.capture_progress = (tile.capture_progress + 1).min(capture_time(
-                    cube_distance(ally_capital_pos, tile.coordinate),
-                ));
-            }
-            TileVariant::Captured(Team::Enemy) | TileVariant::Capital(Team::Enemy) => {
-                tile.capture_progress = (tile.capture_progress - 1).max(-capture_time(
-                    cube_distance(enemy_capital_pos, tile.coordinate),
-                ));
-            }
-        }
-    }
-
-    for mut tile in &mut tiles {
-        match tile.capture_progress.signum() {
-            1 => {
-                let capture_progress =
-                    check_for_capture(ally_tiles.clone(), ally_capital_pos, &tile);
-                let Some(capture_progress) = capture_progress else {
-                    continue;
-                };
-
-                if tile.variant == TileVariant::Capital(Team::Ally) {
-                    continue;
-                }
-
-                if tile.variant == TileVariant::Capital(Team::Enemy) {
-                    tile.variant = TileVariant::Capital(Team::Ally);
-                    println!("Allies Won!");
-                } else {
-                    tile.variant = TileVariant::Captured(Team::Ally);
-                }
-
-                tile.capture_progress = capture_progress;
-            }
-            -1 => {
-                let capture_progress =
-                    check_for_capture(enemy_tiles.clone(), enemy_capital_pos, &tile);
-                let Some(capture_progress) = capture_progress else {
-                    continue;
-                };
-
-                if tile.variant == TileVariant::Capital(Team::Enemy) {
-                    continue;
-                }
-
-                if tile.variant == TileVariant::Capital(Team::Ally) {
-                    tile.variant = TileVariant::Capital(Team::Enemy);
-                    println!("Enemies Won");
-                } else {
-                    tile.variant = TileVariant::Captured(Team::Enemy);
-                }
-
-                tile.capture_progress = -capture_progress;
-            }
-            _ => {}
-        }
-    }
-}
-
-fn capture_time(steps_from_capital: i32) -> i32 {
-    const MIN_CAPTURE_TIME: i32 = 2;
-    const STEPS_BETWEEN_INCREMENT: i32 = 2;
-
-    let capture_time = (steps_from_capital / STEPS_BETWEEN_INCREMENT) + 1;
-
-    capture_time.max(MIN_CAPTURE_TIME)
-}
-
-fn check_for_capture(captured_tiles: Vec<Cube>, capital_pos: Cube, tile: &HexTile) -> Option<i32> {
-    let mut can_capture = false;
-    for neighbor in tile.coordinate.cube_neighbors() {
-        if captured_tiles.contains(&neighbor) {
-            can_capture = true;
+            capture_team = Some(*team);
             break;
         }
-    }
 
-    if !can_capture {
-        return None;
+        match (capture_team, tile.team) {
+            (None, Team::Neutral) => { move_toward(&mut tile.capture_progress, 0, 1); },
+            (None, _) => { move_toward(&mut tile.capture_progress, 3, 1); },
+            (Some(team), Team::Neutral) => if move_toward(&mut tile.capture_progress, 3, 1) { tile.team = team },
+            (Some(_), _) => if move_toward(&mut tile.capture_progress, 0, 1) { tile.team = Team::Neutral },
+        };
     }
+}
 
-    let capture_threshold = capture_time(cube_distance(capital_pos, tile.coordinate));
-    if tile.capture_progress.abs() >= capture_threshold {
-        return Some(capture_time(cube_distance(capital_pos, tile.coordinate)));
-    }
-
-    None
+fn move_toward(value: &mut i32, target: i32, step: i32) -> bool {
+    *value = (*value - step).max((*value + step).min(target));
+    return *value == target;
 }

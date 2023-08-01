@@ -191,11 +191,13 @@ pub fn color_tile_purpose_sprites(
     let unused_color = match unit.team {
         Team::Ally => colors.ally_unused_action_color,
         Team::Enemy => colors.enemy_unused_action_color,
+        _ => colors.ally_unused_action_color,
     };
 
     let used_color = match unit.team {
         Team::Ally => colors.ally_used_action_color,
         Team::Enemy => colors.enemy_used_action_color,
+        _ => colors.ally_used_action_color,
     };
 
     for (tile_purpose_sprite, mut sprite) in &mut sprites {

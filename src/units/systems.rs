@@ -183,9 +183,10 @@ pub fn check_for_unit_movement(
 
 pub fn color_units(mut units: Query<(&Unit, &mut Sprite)>, colors: Res<HexColors>) {
     for (unit, mut sprite) in &mut units {
-        match unit.team {
-            Team::Ally => sprite.color = colors.ally_sprite,
-            Team::Enemy => sprite.color = colors.enemy_sprite,
+        sprite.color = match unit.team {
+            Team::Ally => colors.ally_sprite,
+            Team::Enemy => colors.enemy_sprite,
+            _ => colors.ally_sprite,
         }
     }
 }
