@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::{hexagon::{cube_scale_vec, hex_to_pixel, hexes_in_range, hexes_in_ring, Cube}, board::components::Team};
+use crate::{
+    board::components::Team,
+    hexagon::{cube_scale_vec, hex_to_pixel, hexes_in_range, hexes_in_ring, Cube},
+};
 
 pub enum UnitDefault {
     Archer,
@@ -171,7 +174,7 @@ impl Unit {
         };
 
         self.actions.remove(i);
-        return true;
+        true
     }
 
     pub fn new_turn(&mut self) {
@@ -218,7 +221,7 @@ impl Unit {
         self.health -= armored_damage;
         println!("{}", self.health);
 
-        return self.health <= 0;
+        self.health <= 0
     }
 
     pub fn attack(&mut self, my_transform: &mut Transform, opponent: &mut Unit) {
@@ -237,28 +240,27 @@ impl Unit {
         if self.keywords.contains(&Keyword::Nimble) && killed {
             self.position = opponent.position;
 
-            let (x, y) = hex_to_pixel(self.position);
-            my_transform.translation = Vec3::new(x, y, 1.0);
+            my_transform.translation = hex_to_pixel(self.position).extend(1.);
         }
     }
 
-    pub fn absolute_attack_hexes(&self) -> Vec<Cube> {
+    pub fn relative_attack_hexes(&self) -> Vec<Cube> {
         let mut hexes = Vec::new();
 
         for hex in &self.attack_hexes {
             hexes.push(self.position.cube_add(*hex));
         }
 
-        return hexes;
+        hexes
     }
 
-    pub fn absolute_move_hexes(&self) -> Vec<Cube> {
+    pub fn relative_move_hexes(&self) -> Vec<Cube> {
         let mut hexes = Vec::new();
 
         for hex in &self.move_hexes {
             hexes.push(self.position.cube_add(*hex));
         }
 
-        return hexes;
+        hexes
     }
 }

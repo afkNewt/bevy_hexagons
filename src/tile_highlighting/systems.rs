@@ -1,7 +1,11 @@
 use bevy::prelude::*;
 
 use crate::{
-    board::{components::{HexTile, Team}, resources::HexColors, HEX_RADIUS, HEX_SIZE},
+    board::{
+        components::{HexTile, Team},
+        resources::HexColors,
+        HEX_RADIUS, HEX_SIZE,
+    },
     hexagon::{cursor_to_hex, hex_to_pixel, hexes_in_range, Cube},
     units::{
         components::{Action, Unit},
@@ -61,15 +65,15 @@ pub fn highlight_unit_hex(
     let mut weak_highlights = Vec::new();
 
     if unit.actions.contains(&Action::Attack) {
-        strong_highlights.append(&mut unit.absolute_attack_hexes());
+        strong_highlights.append(&mut unit.relative_move_hexes());
     } else {
-        weak_highlights.append(&mut unit.absolute_attack_hexes());
+        weak_highlights.append(&mut unit.relative_move_hexes());
     };
 
     if unit.actions.contains(&Action::Move) {
-        strong_highlights.append(&mut unit.absolute_move_hexes());
+        strong_highlights.append(&mut unit.relative_move_hexes());
     } else {
-        weak_highlights.append(&mut unit.absolute_move_hexes());
+        weak_highlights.append(&mut unit.relative_move_hexes());
     };
 
     for (hex, mut color_mat) in &mut hexes {
@@ -101,25 +105,25 @@ pub fn spawn_tile_purpose_sprites(
 
     let valid_hex_tiles = hexes_in_range(HEX_RADIUS, Cube::axial_new(0, 0));
 
-    let mut both = unit.absolute_move_hexes();
-    both.retain(|cube| unit.absolute_attack_hexes().contains(cube));
+    let mut both = unit.relative_move_hexes();
+    both.retain(|cube| unit.relative_move_hexes().contains(cube));
 
-    for hex in unit.absolute_move_hexes() {
+    for hex in unit.relative_move_hexes() {
         if !valid_hex_tiles.contains(&hex) {
             continue;
         }
 
-        let (x, y) = hex_to_pixel(hex);
+        let pixel_position = hex_to_pixel(hex);
 
         let transform = if both.contains(&hex) {
             Transform {
-                translation: Vec3::new(x + HEX_SIZE / 3., y, 2.),
+                translation: Vec3::new(pixel_position.x + HEX_SIZE / 3., pixel_position.y, 2.),
                 scale: Vec3::splat(HEX_SIZE / 220.),
                 ..Default::default()
             }
         } else {
             Transform {
-                translation: Vec3::new(x, y, 2.),
+                translation: pixel_position.extend(2.),
                 scale: Vec3::splat(HEX_SIZE / 220.),
                 ..Default::default()
             }
@@ -134,22 +138,22 @@ pub fn spawn_tile_purpose_sprites(
             .insert(TilePurposeSprite(Action::Move));
     }
 
-    for hex in unit.absolute_attack_hexes() {
+    for hex in unit.relative_move_hexes() {
         if !valid_hex_tiles.contains(&hex) {
             continue;
         }
 
-        let (x, y) = hex_to_pixel(hex);
+        let pixel_position = hex_to_pixel(hex);
 
         let transform = if both.contains(&hex) {
             Transform {
-                translation: Vec3::new(x - HEX_SIZE / 3., y, 2.),
+                translation: Vec3::new(pixel_position.x - HEX_SIZE / 3., pixel_position.y, 2.),
                 scale: Vec3::splat(HEX_SIZE / 220.),
                 ..Default::default()
             }
         } else {
             Transform {
-                translation: Vec3::new(x, y, 2.),
+                translation: pixel_position.extend(2.),
                 scale: Vec3::splat(HEX_SIZE / 220.),
                 ..Default::default()
             }

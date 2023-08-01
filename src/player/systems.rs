@@ -90,17 +90,13 @@ fn update_capture_progress(mut tiles: Query<&mut HexTile>, units: Query<&Unit>) 
             }
 
             let neighbors = hex_tile.coordinate.cube_neighbors();
-            if tiles
-                .iter()
-                .find(|neighbor| {
-                    neighbors.contains(&neighbor.coordinate) && unit.team == neighbor.team
-                })
-                .is_some()
-            {
+            if tiles.iter().any(|neighbor| {
+                neighbors.contains(&neighbor.coordinate) && unit.team == neighbor.team
+            }) {
                 return Some((hex_tile.coordinate, unit.team));
             }
 
-            return None;
+            None
         })
         .collect::<Vec<_>>();
 
@@ -116,15 +112,27 @@ fn update_capture_progress(mut tiles: Query<&mut HexTile>, units: Query<&Unit>) 
         }
 
         match (capture_team, tile.team) {
-            (None, Team::Neutral) => { move_toward(&mut tile.capture_progress, 0, 1); },
-            (None, _) => { move_toward(&mut tile.capture_progress, 3, 1); },
-            (Some(team), Team::Neutral) => if move_toward(&mut tile.capture_progress, 3, 1) { tile.team = team },
-            (Some(_), _) => if move_toward(&mut tile.capture_progress, 0, 1) { tile.team = Team::Neutral },
+            (None, Team::Neutral) => {
+                move_toward(&mut tile.capture_progress, 0, 1);
+            }
+            (None, _) => {
+                move_toward(&mut tile.capture_progress, 3, 1);
+            }
+            (Some(team), Team::Neutral) => {
+                if move_toward(&mut tile.capture_progress, 3, 1) {
+                    tile.team = team
+                }
+            }
+            (Some(_), _) => {
+                if move_toward(&mut tile.capture_progress, 0, 1) {
+                    tile.team = Team::Neutral
+                }
+            }
         };
     }
 }
 
 fn move_toward(value: &mut i32, target: i32, step: i32) -> bool {
     *value = (*value - step).max((*value + step).min(target));
-    return *value == target;
+    *value == target
 }

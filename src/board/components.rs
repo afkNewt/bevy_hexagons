@@ -38,7 +38,7 @@ impl HexTile {
             return colors.enemy_capital_strong_highlight.clone();
         }
 
-        return colors.neutral_strong_highlight.clone();
+        colors.neutral_strong_highlight.clone()
     }
 
     pub fn weak_highlight(&self, colors: &Res<HexColors>) -> Handle<ColorMaterial> {
@@ -50,7 +50,7 @@ impl HexTile {
             return colors.enemy_capital_weak_highlight.clone();
         }
 
-        return colors.neutral_weak_highlight.clone();
+        colors.neutral_weak_highlight.clone()
     }
 
     pub fn base_color(&self, colors: &Res<HexColors>) -> Handle<ColorMaterial> {
@@ -62,6 +62,6 @@ impl HexTile {
             return colors.enemy_capital.clone();
         }
 
-        return colors.neutral.clone();
+        colors.neutral.clone()
     }
 }

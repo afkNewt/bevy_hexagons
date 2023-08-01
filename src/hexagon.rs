@@ -60,11 +60,11 @@ impl Cube {
     pub fn cube_neighbors(self) -> [Cube; 6] {
         let mut neighbors = [Cube::cube_new(0, 0, 0); 6];
 
-        for i in 0..6 {
+        (0..6).for_each(|i| {
             neighbors[i] = Self::cube_neighbor(self, i);
-        }
+        });
 
-        return neighbors;
+        neighbors
     }
 }
 
@@ -100,11 +100,11 @@ impl FractionalCube {
         let s_diff = (s - self.s).abs();
 
         if q_diff > r_diff && q_diff > s_diff {
-            return Cube::cube_new((-r - s) as i32, r as i32, s as i32);
+            Cube::cube_new((-r - s) as i32, r as i32, s as i32)
         } else if r_diff > s_diff {
-            return Cube::cube_new(q as i32, (-q - s) as i32, s as i32);
+            Cube::cube_new(q as i32, (-q - s) as i32, s as i32)
         } else {
-            return Cube::cube_new(q as i32, r as i32, (-q - r) as i32);
+            Cube::cube_new(q as i32, r as i32, (-q - r) as i32)
         }
     }
 }
@@ -127,15 +127,15 @@ pub fn cursor_to_hex(windows: Query<&Window>) -> Option<Cube> {
         return None;
     }
 
-    return Some(pixel_to_hex(x, y));
+    Some(pixel_to_hex(x, y))
 }
 
 // https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
-pub fn hex_to_pixel(hex: Cube) -> (f32, f32) {
+pub fn hex_to_pixel(hex: Cube) -> Vec2 {
     let padded_size = HEX_SIZE + HEX_GAP;
     let x = padded_size * (3_f32.sqrt() * hex.q as f32 + 3_f32.sqrt() / 2. * hex.r as f32);
     let y = padded_size * (3. / 2. * hex.r as f32);
-    return (x, y);
+    Vec2::new(x, y)
 }
 
 // https://www.redblobgames.com/grids/hexagons/#pixel-to-hex

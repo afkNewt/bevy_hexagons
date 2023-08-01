@@ -54,8 +54,7 @@ pub fn build_board(
     let hex_coords = hexes_in_range(HEX_RADIUS, Cube::axial_new(0, 0));
     for coord in hex_coords {
         // https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
-        let (x, y) = hex_to_pixel(coord);
-        pointy_top_hex_mesh.transform.translation = Vec3::new(x, y, 1.);
+        pointy_top_hex_mesh.transform.translation = hex_to_pixel(coord).extend(1.);
 
         commands.spawn(pointy_top_hex_mesh.clone()).insert(HexTile {
             coordinate: coord,
@@ -178,15 +177,15 @@ fn tile_border(hexes: &Query<&HexTile>, team: Team) -> Option<Vec<Vec<Vec2>>> {
         .filter(|h| h.team == team)
         .flat_map(|h| {
             let neighbor_coords = h.coordinate.cube_neighbors();
-            let (h_x, h_y) = hex_to_pixel(h.coordinate);
+            let hex_pixel_pos = hex_to_pixel(h.coordinate);
 
             [
                 neighbor_coords
                     .iter()
                     .filter(|c| !valid_tiles.contains(c))
                     .map(|c| {
-                        let (c_x, c_y) = hex_to_pixel(*c);
-                        Vec2::new((c_x + h_x) / 2., (c_y + h_y) / 2.)
+                        let pixel_pos = hex_to_pixel(*c);
+                        Vec2::new((pixel_pos.x + hex_pixel_pos.x) / 2., (pixel_pos.y + hex_pixel_pos.y) / 2.)
                     })
                     .collect::<Vec<_>>(),
                 hexes
@@ -194,8 +193,8 @@ fn tile_border(hexes: &Query<&HexTile>, team: Team) -> Option<Vec<Vec<Vec2>>> {
                     .filter(|h| neighbor_coords.contains(&h.coordinate))
                     .filter_map(|n| {
                         if n.team != team {
-                            let (n_x, n_y) = hex_to_pixel(n.coordinate);
-                            return Some(Vec2::new((n_x + h_x) / 2., (n_y + h_y) / 2.));
+                            let neighbor_pixel_pos = hex_to_pixel(n.coordinate);
+                            return Some(Vec2::new((neighbor_pixel_pos.x + hex_pixel_pos.x) / 2., (neighbor_pixel_pos.y + hex_pixel_pos.y) / 2.));
                         }
 
                         None

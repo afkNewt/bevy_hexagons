@@ -3,7 +3,7 @@ use bevy::prelude::*;
 const UNIT_SPRITE_SIZE: f32 = HEX_SIZE / 110.;
 
 use crate::{
-    board::{resources::HexColors, HEX_SIZE, components::Team},
+    board::{components::Team, resources::HexColors, HEX_SIZE},
     hexagon::{cursor_to_hex, hex_to_pixel, Cube},
 };
 
@@ -43,11 +43,11 @@ fn spawn_unit(
     unit: UnitDefault,
     team: Team,
 ) {
-    let (x, y) = hex_to_pixel(hex_pos);
+    let pixel_pos = hex_to_pixel(hex_pos);
     commands
         .spawn(SpriteBundle {
             transform: Transform {
-                translation: Vec3::new(x, y, 1.),
+                translation: pixel_pos.extend(1.),
                 scale: Vec3::splat(UNIT_SPRITE_SIZE),
                 ..Default::default()
             },
@@ -131,13 +131,12 @@ pub fn check_for_unit_movement(
         return;
     }
 
-    if unit.absolute_attack_hexes().contains(&hovered_hex) && unit.actions.contains(&Action::Attack)
-    {
-        let (x, y) = hex_to_pixel(hovered_hex);
+    if unit.relative_move_hexes().contains(&hovered_hex) && unit.actions.contains(&Action::Attack) {
+        let pixel_pos = hex_to_pixel(hovered_hex);
 
         let mut enemy_entity = None;
         for (enemy_unit, transform, entity) in &units {
-            if enemy_unit.team == Team::Ally || transform.translation != Vec3::new(x, y, 1.0) {
+            if enemy_unit.team == Team::Ally || transform.translation != pixel_pos.extend(1.) {
                 continue;
             }
 
@@ -160,11 +159,12 @@ pub fn check_for_unit_movement(
 
     let unit = units.get(selected_entity).unwrap().0;
 
-    if unit.absolute_move_hexes().contains(&hovered_hex) && unit.actions.contains(&Action::Move) {
+    if unit.relative_move_hexes().contains(&hovered_hex) && unit.actions.contains(&Action::Move) {
+        let new_position = hex_to_pixel(hovered_hex).extend(1.);
+
         // check if tile is occupied
-        let (x, y) = hex_to_pixel(hovered_hex);
         for (_unit, transform, _entity) in &units {
-            if transform.translation != Vec3::new(x, y, 1.0) {
+            if transform.translation != new_position {
                 continue;
             }
 
@@ -174,8 +174,7 @@ pub fn check_for_unit_movement(
 
         let (mut unit, mut unit_transform, _unit_id) = units.get_mut(selected_entity).unwrap();
 
-        let (x, y) = hex_to_pixel(hovered_hex);
-        unit_transform.translation = Vec3::new(x, y, 1.0);
+        unit_transform.translation = new_position;
         unit.position = hovered_hex;
         unit.remove_action(Action::Move);
     }
