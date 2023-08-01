@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::hexagon::{cube_scale_vec, hex_to_pixel, hexes_in_range, hexes_in_ring, Cube};
+use crate::{hexagon::{cube_scale_vec, hex_to_pixel, hexes_in_range, hexes_in_ring, Cube}, board::components::Team};
 
 pub enum UnitDefault {
     Archer,
@@ -59,7 +59,7 @@ pub enum Action {
 #[derive(Component, Clone)]
 pub struct Unit {
     pub position: Cube,
-    pub ally: bool,
+    pub team: Team,
     pub max_health: i32,
     pub health: i32,
     pub damage: i32,
@@ -74,13 +74,13 @@ pub struct Unit {
 }
 
 impl Unit {
-    pub fn new_default(default: UnitDefault, position: Cube, ally: bool) -> Self {
+    pub fn new_default(default: UnitDefault, position: Cube, team: Team) -> Self {
         let actions = vec![Action::Move];
 
         match default {
             UnitDefault::Archer => Unit {
                 position,
-                ally,
+                team,
                 max_health: 1,
                 health: 1,
                 damage: 2,
@@ -91,7 +91,7 @@ impl Unit {
             },
             UnitDefault::BladeDancer => Unit {
                 position,
-                ally,
+                team,
                 max_health: 2,
                 health: 2,
                 damage: 2,
@@ -102,7 +102,7 @@ impl Unit {
             },
             UnitDefault::Scout => Unit {
                 position,
-                ally,
+                team,
                 max_health: 1,
                 health: 1,
                 damage: 1,
@@ -113,7 +113,7 @@ impl Unit {
             },
             UnitDefault::Knight => Unit {
                 position,
-                ally,
+                team,
                 max_health: 4,
                 health: 4,
                 damage: 2,
@@ -124,7 +124,7 @@ impl Unit {
             },
             UnitDefault::Catapult => Unit {
                 position,
-                ally,
+                team,
                 max_health: 2,
                 health: 2,
                 damage: 4,
@@ -135,7 +135,7 @@ impl Unit {
             },
             UnitDefault::Sniper => Unit {
                 position,
-                ally,
+                team,
                 max_health: 1,
                 health: 1,
                 damage: 10,
@@ -149,7 +149,7 @@ impl Unit {
             },
             UnitDefault::Newt => Unit {
                 position,
-                ally,
+                team,
                 max_health: 10,
                 health: 6,
                 damage: 2,

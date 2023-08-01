@@ -6,6 +6,10 @@ pub mod components;
 pub mod resources;
 pub mod systems;
 
+// how many hex_rads larger the
+// background hex should be
+pub const BACKGROUND_HEX_SIZE: f32 = 1.8;
+
 pub const HEX_SIZE: f32 = 40.;
 pub const HEX_GAP: f32 = 2.5;
 pub const HEX_RADIUS: i32 = 5;

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    board::components::{HexTile, TileVariant},
+    board::components::{HexTile, TileVariant, Team},
     hexagon::Cube,
 };
 
@@ -19,11 +19,11 @@ pub fn place_enemy_capital(mut hexes: Query<&mut HexTile>) {
 
     for mut hex in &mut hexes {
         if enemy_tiles.contains(&hex.coordinate) {
-            hex.variant = TileVariant::EnemyLand;
+            hex.variant = TileVariant::Captured(Team::Enemy);
         }
 
         if hex.coordinate == enemy_capital {
-            hex.variant = TileVariant::EnemyCapital;
+            hex.variant = TileVariant::Capital(Team::Enemy);
         }
     }
 }

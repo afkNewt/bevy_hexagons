@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    board::components::{HexTile, TileVariant},
+    board::components::{HexTile, Team, TileVariant},
     hexagon::{cube_distance, cursor_to_hex, Cube},
     units::components::Unit,
 };
@@ -34,11 +34,11 @@ pub fn place_ally_capital(
 
     for mut hex in &mut hexes {
         if claim_tiles.contains(&hex.coordinate) {
-            hex.variant = TileVariant::AllyLand;
+            hex.variant = TileVariant::Captured(Team::Ally);
         }
 
         if hex.coordinate == hovered_hex {
-            hex.variant = TileVariant::AllyCapital;
+            hex.variant = TileVariant::Capital(Team::Ally);
             ally_capital.position = Some(hovered_hex);
         }
     }
@@ -56,7 +56,7 @@ pub fn pass_turn(
     }
 
     for hex_tile in &hex_tiles {
-        if hex_tile.variant == TileVariant::AllyLand {
+        if hex_tile.variant == TileVariant::Capital(Team::Ally) {
             player_coin_count.0 += 1;
         }
     }
@@ -75,10 +75,12 @@ pub fn pass_turn(
 }
 
 fn update_capture_progress(mut tiles: Query<&mut HexTile>, units: Query<&Unit>) {
-    let ally_capital = tiles.iter().find(|t| t.variant == TileVariant::AllyCapital);
+    let ally_capital = tiles
+        .iter()
+        .find(|t| t.variant == TileVariant::Capital(Team::Ally));
     let enemy_capital = tiles
         .iter()
-        .find(|t| t.variant == TileVariant::EnemyCapital);
+        .find(|t| t.variant == TileVariant::Capital(Team::Enemy));
 
     if ally_capital.is_none() || enemy_capital.is_none() {
         return;
@@ -89,23 +91,30 @@ fn update_capture_progress(mut tiles: Query<&mut HexTile>, units: Query<&Unit>) 
 
     let ally_tiles: Vec<Cube> = tiles
         .iter()
-        .filter(|t| t.variant == TileVariant::AllyLand || t.variant == TileVariant::AllyCapital)
+        .filter(|t| {
+            t.variant == TileVariant::Captured(Team::Ally)
+                || t.variant == TileVariant::Capital(Team::Ally)
+        })
         .map(|t| t.coordinate)
         .collect();
 
     let enemy_tiles: Vec<Cube> = tiles
         .iter()
-        .filter(|t| t.variant == TileVariant::EnemyLand || t.variant == TileVariant::EnemyCapital)
+        .filter(|t| {
+            t.variant == TileVariant::Captured(Team::Enemy)
+                || t.variant == TileVariant::Capital(Team::Enemy)
+        })
         .map(|t| t.coordinate)
         .collect();
 
-    let unit_vec: Vec<(Cube, bool)> = units.iter().map(|u| (u.position, u.ally)).collect();
+    let unit_vec: Vec<(Cube, Team)> = units.iter().map(|u| (u.position, u.team)).collect();
 
     for mut tile in &mut tiles {
         let mut progress = 0;
 
-        if unit_vec.contains(&(tile.coordinate, false))
-            && (tile.variant != TileVariant::EnemyCapital || tile.variant != TileVariant::EnemyLand)
+        if unit_vec.contains(&(tile.coordinate, Team::Enemy))
+            && (tile.variant != TileVariant::Capital(Team::Enemy)
+                || tile.variant != TileVariant::Captured(Team::Enemy))
         {
             let mut can_progress = false;
             for neighbor in tile.coordinate.cube_neighbors() {
@@ -120,8 +129,9 @@ fn update_capture_progress(mut tiles: Query<&mut HexTile>, units: Query<&Unit>) 
             }
         }
 
-        if unit_vec.contains(&(tile.coordinate, true))
-            && (tile.variant != TileVariant::AllyCapital || tile.variant != TileVariant::AllyLand)
+        if unit_vec.contains(&(tile.coordinate, Team::Ally))
+            && (tile.variant != TileVariant::Capital(Team::Ally)
+                || tile.variant != TileVariant::Captured(Team::Ally))
         {
             let mut can_progress = false;
             for neighbor in tile.coordinate.cube_neighbors() {
@@ -140,8 +150,8 @@ fn update_capture_progress(mut tiles: Query<&mut HexTile>, units: Query<&Unit>) 
     }
 
     for mut tile in &mut tiles {
-        if unit_vec.contains(&(tile.coordinate, false))
-            || unit_vec.contains(&(tile.coordinate, true))
+        if unit_vec.contains(&(tile.coordinate, Team::Enemy))
+            || unit_vec.contains(&(tile.coordinate, Team::Ally))
         {
             continue;
         }
@@ -155,12 +165,12 @@ fn update_capture_progress(mut tiles: Query<&mut HexTile>, units: Query<&Unit>) 
                 tile.capture_progress =
                     (tile.capture_progress.abs() - 1) * tile.capture_progress.signum();
             }
-            TileVariant::AllyLand | TileVariant::AllyCapital => {
+            TileVariant::Captured(Team::Ally) | TileVariant::Capital(Team::Ally) => {
                 tile.capture_progress = (tile.capture_progress + 1).min(capture_time(
                     cube_distance(ally_capital_pos, tile.coordinate),
                 ));
             }
-            TileVariant::EnemyLand | TileVariant::EnemyCapital => {
+            TileVariant::Captured(Team::Enemy) | TileVariant::Capital(Team::Enemy) => {
                 tile.capture_progress = (tile.capture_progress - 1).max(-capture_time(
                     cube_distance(enemy_capital_pos, tile.coordinate),
                 ));
@@ -177,15 +187,15 @@ fn update_capture_progress(mut tiles: Query<&mut HexTile>, units: Query<&Unit>) 
                     continue;
                 };
 
-                if tile.variant == TileVariant::AllyCapital {
+                if tile.variant == TileVariant::Capital(Team::Ally) {
                     continue;
                 }
 
-                if tile.variant == TileVariant::EnemyCapital {
-                    tile.variant = TileVariant::AllyCapital;
+                if tile.variant == TileVariant::Capital(Team::Enemy) {
+                    tile.variant = TileVariant::Capital(Team::Ally);
                     println!("Allies Won!");
                 } else {
-                    tile.variant = TileVariant::AllyLand;
+                    tile.variant = TileVariant::Captured(Team::Ally);
                 }
 
                 tile.capture_progress = capture_progress;
@@ -197,15 +207,15 @@ fn update_capture_progress(mut tiles: Query<&mut HexTile>, units: Query<&Unit>) 
                     continue;
                 };
 
-                if tile.variant == TileVariant::EnemyCapital {
+                if tile.variant == TileVariant::Capital(Team::Enemy) {
                     continue;
                 }
 
-                if tile.variant == TileVariant::AllyCapital {
-                    tile.variant = TileVariant::EnemyCapital;
+                if tile.variant == TileVariant::Capital(Team::Ally) {
+                    tile.variant = TileVariant::Capital(Team::Enemy);
                     println!("Enemies Won");
                 } else {
-                    tile.variant = TileVariant::EnemyLand;
+                    tile.variant = TileVariant::Captured(Team::Enemy);
                 }
 
                 tile.capture_progress = -capture_progress;

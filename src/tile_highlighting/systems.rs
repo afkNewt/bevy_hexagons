@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    board::{components::HexTile, resources::HexColors, HEX_RADIUS, HEX_SIZE},
+    board::{components::{HexTile, Team}, resources::HexColors, HEX_RADIUS, HEX_SIZE},
     hexagon::{cursor_to_hex, hex_to_pixel, hexes_in_range, Cube},
     units::{
         components::{Action, Unit},
@@ -113,13 +113,13 @@ pub fn spawn_tile_purpose_sprites(
 
         let transform = if both.contains(&hex) {
             Transform {
-                translation: Vec3::new(x + HEX_SIZE / 3., y, 1.),
+                translation: Vec3::new(x + HEX_SIZE / 3., y, 2.),
                 scale: Vec3::splat(HEX_SIZE / 220.),
                 ..Default::default()
             }
         } else {
             Transform {
-                translation: Vec3::new(x, y, 1.),
+                translation: Vec3::new(x, y, 2.),
                 scale: Vec3::splat(HEX_SIZE / 220.),
                 ..Default::default()
             }
@@ -143,13 +143,13 @@ pub fn spawn_tile_purpose_sprites(
 
         let transform = if both.contains(&hex) {
             Transform {
-                translation: Vec3::new(x - HEX_SIZE / 3., y, 1.),
+                translation: Vec3::new(x - HEX_SIZE / 3., y, 2.),
                 scale: Vec3::splat(HEX_SIZE / 220.),
                 ..Default::default()
             }
         } else {
             Transform {
-                translation: Vec3::new(x, y, 1.),
+                translation: Vec3::new(x, y, 2.),
                 scale: Vec3::splat(HEX_SIZE / 220.),
                 ..Default::default()
             }
@@ -188,14 +188,14 @@ pub fn color_tile_purpose_sprites(
         return;
     };
 
-    let unused_color = match unit.ally {
-        true => colors.ally_unused_action_color,
-        false => colors.enemy_unused_action_color,
+    let unused_color = match unit.team {
+        Team::Ally => colors.ally_unused_action_color,
+        Team::Enemy => colors.enemy_unused_action_color,
     };
 
-    let used_color = match unit.ally {
-        true => colors.ally_used_action_color,
-        false => colors.enemy_used_action_color,
+    let used_color = match unit.team {
+        Team::Ally => colors.ally_used_action_color,
+        Team::Enemy => colors.enemy_used_action_color,
     };
 
     for (tile_purpose_sprite, mut sprite) in &mut sprites {

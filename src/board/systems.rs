@@ -1,13 +1,11 @@
-use std::f32::consts::PI;
-
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
 use crate::hexagon::{hex_to_pixel, hexes_in_range, Cube};
 
 use super::{
-    components::{Border, HexTile, TileVariant},
+    components::{Border, HexTile, TileVariant, Team},
     resources::HexColors,
-    HEX_GAP, HEX_RADIUS, HEX_SIZE,
+    BACKGROUND_HEX_SIZE, HEX_GAP, HEX_RADIUS, HEX_SIZE,
 };
 
 pub fn load_colors(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
@@ -20,7 +18,7 @@ pub fn load_colors(mut commands: Commands, mut materials: ResMut<Assets<ColorMat
 
         ally_sprite: Color::rgb_u8(70, 130, 250),
         ally_unused_action_color: Color::rgb_u8(100, 150, 250),
-        ally_used_action_color: Color::rgba_u8(100, 150, 250, 100),
+        ally_used_action_color: Color::rgba_u8(100, 150, 250, 50),
         ally_border_color: materials.add(ColorMaterial::from(Color::rgba_u8(70, 130, 250, 100))),
         ally_capital: materials.add(ColorMaterial::from(Color::rgb_u8(70, 70, 200))),
         ally_capital_weak_highlight: materials
@@ -30,7 +28,7 @@ pub fn load_colors(mut commands: Commands, mut materials: ResMut<Assets<ColorMat
 
         enemy_sprite: Color::rgb_u8(250, 130, 70),
         enemy_unused_action_color: Color::rgb_u8(250, 150, 100),
-        enemy_used_action_color: Color::rgba_u8(250, 150, 100, 100),
+        enemy_used_action_color: Color::rgba_u8(250, 150, 100, 50),
         enemy_border_color: materials.add(ColorMaterial::from(Color::rgba_u8(200, 70, 70, 100))),
         enemy_capital: materials.add(ColorMaterial::from(Color::rgb_u8(200, 70, 70))),
         enemy_capital_weak_highlight: materials
@@ -66,9 +64,9 @@ pub fn build_board(
         });
     }
 
-    let magic_number = (PI / 180. * 30.).cos();
-    let scale = ((HEX_RADIUS as f32 * 2. + 1.8) * HEX_SIZE + HEX_RADIUS as f32 * 2. * HEX_GAP)
-        * magic_number;
+    let scale = 3_f32.sqrt() / 2.
+        * (2. * HEX_RADIUS as f32 * HEX_GAP
+            + HEX_SIZE * (2. * HEX_RADIUS as f32 + BACKGROUND_HEX_SIZE));
 
     let flat_top_hex_mesh = MaterialMesh2dBundle {
         mesh: meshes
@@ -91,11 +89,11 @@ pub fn draw_borders(
 ) {
     let ally_point_group = tile_border(
         &hexes,
-        vec![TileVariant::AllyLand, TileVariant::AllyCapital],
+        vec![TileVariant::Captured(Team::Ally), TileVariant::Capital(Team::Ally)],
     );
     let enemy_point_group = tile_border(
         &hexes,
-        vec![TileVariant::EnemyLand, TileVariant::EnemyCapital],
+        vec![TileVariant::Captured(Team::Enemy), TileVariant::Capital(Team::Enemy)],
     );
 
     let Some(ally_point_group) = ally_point_group else {

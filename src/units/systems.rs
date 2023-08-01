@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 
+const UNIT_SPRITE_SIZE: f32 = HEX_SIZE / 110.;
+
 use crate::{
-    board::{resources::HexColors, HEX_SIZE},
+    board::{resources::HexColors, HEX_SIZE, components::Team},
     hexagon::{cursor_to_hex, hex_to_pixel, Cube},
 };
 
@@ -16,21 +18,21 @@ pub fn test_spawn_unit(mut commands: Commands, asset_server: Res<AssetServer>) {
         &asset_server,
         Cube::axial_new(-2, 4),
         UnitDefault::Knight,
-        true,
+        Team::Ally,
     );
     spawn_unit(
         &mut commands,
         &asset_server,
         Cube::axial_new(-2, 1),
         UnitDefault::Newt,
-        false,
+        Team::Enemy,
     );
     spawn_unit(
         &mut commands,
         &asset_server,
         Cube::axial_new(-3, 0),
         UnitDefault::Archer,
-        false,
+        Team::Enemy,
     );
 }
 
@@ -39,20 +41,20 @@ fn spawn_unit(
     asset_server: &Res<AssetServer>,
     hex_pos: Cube,
     unit: UnitDefault,
-    ally: bool,
+    team: Team,
 ) {
     let (x, y) = hex_to_pixel(hex_pos);
     commands
         .spawn(SpriteBundle {
             transform: Transform {
                 translation: Vec3::new(x, y, 1.),
-                scale: Vec3::splat(HEX_SIZE / 110.),
+                scale: Vec3::splat(UNIT_SPRITE_SIZE),
                 ..Default::default()
             },
             texture: asset_server.load(unit.sprite_location()),
             ..default()
         })
-        .insert(Unit::new_default(unit, hex_pos, ally));
+        .insert(Unit::new_default(unit, hex_pos, team));
 }
 
 pub fn check_for_unit_selection(
@@ -125,7 +127,7 @@ pub fn check_for_unit_movement(
     };
 
     // make sure the entity is an ally
-    if !unit.ally {
+    if unit.team != Team::Ally {
         return;
     }
 
@@ -135,7 +137,7 @@ pub fn check_for_unit_movement(
 
         let mut enemy_entity = None;
         for (enemy_unit, transform, entity) in &units {
-            if enemy_unit.ally || transform.translation != Vec3::new(x, y, 1.0) {
+            if enemy_unit.team == Team::Ally || transform.translation != Vec3::new(x, y, 1.0) {
                 continue;
             }
 
@@ -145,8 +147,11 @@ pub fn check_for_unit_movement(
 
         if let Some(enemy_entity) = enemy_entity {
             let entities = units.get_many_mut([selected_entity, enemy_entity]);
-            if let Ok([mut attacker, mut defender]) = entities {
-                attacker.0.attack(&mut attacker.1, &mut defender.0);
+            if let Ok(
+                [(mut attacker_unit, mut attacker_transform, _attacker_entity), (mut defender_unit, _defender_transform, _defender_entity)],
+            ) = entities
+            {
+                attacker_unit.attack(&mut attacker_transform, &mut defender_unit);
                 buttons.clear_just_released(MouseButton::Left);
                 return;
             }
@@ -178,9 +183,9 @@ pub fn check_for_unit_movement(
 
 pub fn color_units(mut units: Query<(&Unit, &mut Sprite)>, colors: Res<HexColors>) {
     for (unit, mut sprite) in &mut units {
-        match unit.ally {
-            true => sprite.color = colors.ally_sprite,
-            false => sprite.color = colors.enemy_sprite,
+        match unit.team {
+            Team::Ally => sprite.color = colors.ally_sprite,
+            Team::Enemy => sprite.color = colors.enemy_sprite,
         }
     }
 }
