@@ -3,7 +3,7 @@ use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use crate::hexagon::{hex_to_pixel, hexes_in_range, Cube};
 
 use super::{
-    components::{Border, HexTile, TileVariant, Team},
+    components::{Border, HexTile, Team, TileVariant},
     resources::HexColors,
     BACKGROUND_HEX_SIZE, HEX_GAP, HEX_RADIUS, HEX_SIZE,
 };
@@ -87,14 +87,8 @@ pub fn draw_borders(
     colors: Res<HexColors>,
     borders: Query<Entity, With<Border>>,
 ) {
-    let ally_point_group = tile_border(
-        &hexes,
-        Team::Ally,
-    );
-    let enemy_point_group = tile_border(
-        &hexes,
-        Team::Enemy,
-    );
+    let ally_point_group = tile_border(&hexes, Team::Ally);
+    let enemy_point_group = tile_border(&hexes, Team::Enemy);
 
     let Some(ally_point_group) = ally_point_group else {
         return;
@@ -185,7 +179,10 @@ fn tile_border(hexes: &Query<&HexTile>, team: Team) -> Option<Vec<Vec<Vec2>>> {
                     .filter(|c| !valid_tiles.contains(c))
                     .map(|c| {
                         let pixel_pos = hex_to_pixel(*c);
-                        Vec2::new((pixel_pos.x + hex_pixel_pos.x) / 2., (pixel_pos.y + hex_pixel_pos.y) / 2.)
+                        Vec2::new(
+                            (pixel_pos.x + hex_pixel_pos.x) / 2.,
+                            (pixel_pos.y + hex_pixel_pos.y) / 2.,
+                        )
                     })
                     .collect::<Vec<_>>(),
                 hexes
@@ -194,7 +191,10 @@ fn tile_border(hexes: &Query<&HexTile>, team: Team) -> Option<Vec<Vec<Vec2>>> {
                     .filter_map(|n| {
                         if n.team != team {
                             let neighbor_pixel_pos = hex_to_pixel(n.coordinate);
-                            return Some(Vec2::new((neighbor_pixel_pos.x + hex_pixel_pos.x) / 2., (neighbor_pixel_pos.y + hex_pixel_pos.y) / 2.));
+                            return Some(Vec2::new(
+                                (neighbor_pixel_pos.x + hex_pixel_pos.x) / 2.,
+                                (neighbor_pixel_pos.y + hex_pixel_pos.y) / 2.,
+                            ));
                         }
 
                         None

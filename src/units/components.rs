@@ -29,7 +29,7 @@ impl UnitDefault {
     }
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
 pub enum Keyword {
     // amount of damage reduced
     // for every hit (like repulsion armor)
