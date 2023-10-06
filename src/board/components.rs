@@ -1,6 +1,5 @@
 use bevy::prelude::*;
-
-use crate::hexagon::Cube;
+use hexx::Hex;
 
 use super::resources::HexColors;
 
@@ -22,7 +21,7 @@ pub enum TileVariant {
 
 #[derive(Component, PartialEq)]
 pub struct HexTile {
-    pub coordinate: Cube,
+    pub coordinate: Hex,
     pub variant: TileVariant,
     pub capture_progress: i32,
     pub team: Team,

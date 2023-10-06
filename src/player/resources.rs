@@ -1,10 +1,9 @@
 use bevy::prelude::*;
-
-use crate::hexagon::Cube;
+use hexx::Hex;
 
 #[derive(Resource)]
 pub struct AllyCapital {
-    pub position: Option<Cube>,
+    pub position: Option<Hex>,
 }
 
 #[derive(Resource)]

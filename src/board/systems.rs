@@ -1,11 +1,10 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
-
-use crate::hexagon::{hex_to_pixel, hexes_in_range, Cube};
+use hexx::Hex;
 
 use super::{
     components::{Border, HexTile, Team, TileVariant},
     resources::HexColors,
-    BACKGROUND_HEX_SIZE, HEX_GAP, HEX_RADIUS, HEX_SIZE,
+    BACKGROUND_HEX_SIZE, HEX_GAP, HEX_RADIUS, HEX_SIZE, HEX_LAYOUT,
 };
 
 pub fn load_colors(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
@@ -51,10 +50,10 @@ pub fn build_board(
         ..default()
     };
 
-    let hex_coords = hexes_in_range(HEX_RADIUS, Cube::axial_new(0, 0));
+    let hex_coords = Hex::ZERO.range(HEX_RADIUS as u32);
     for coord in hex_coords {
         // https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
-        pointy_top_hex_mesh.transform.translation = hex_to_pixel(coord).extend(1.);
+        pointy_top_hex_mesh.transform.translation = HEX_LAYOUT.hex_to_world_pos(coord).extend(1.);
 
         commands.spawn(pointy_top_hex_mesh.clone()).insert(HexTile {
             coordinate: coord,
@@ -164,21 +163,21 @@ pub fn draw_borders(
 }
 
 fn tile_border(hexes: &Query<&HexTile>, team: Team) -> Option<Vec<Vec<Vec2>>> {
-    let valid_tiles = hexes_in_range(HEX_RADIUS, Cube::axial_new(0, 0));
+    let valid_tiles = Hex::ZERO.range(HEX_RADIUS as u32).collect::<Vec<Hex>>();
 
     let mut unsorted_points = hexes
         .iter()
         .filter(|h| h.team == team)
         .flat_map(|h| {
-            let neighbor_coords = h.coordinate.cube_neighbors();
-            let hex_pixel_pos = hex_to_pixel(h.coordinate);
+            let neighbor_coords = h.coordinate.all_neighbors();
+            let hex_pixel_pos = HEX_LAYOUT.hex_to_world_pos(h.coordinate);
 
             [
                 neighbor_coords
                     .iter()
                     .filter(|c| !valid_tiles.contains(c))
                     .map(|c| {
-                        let pixel_pos = hex_to_pixel(*c);
+                        let pixel_pos = HEX_LAYOUT.hex_to_world_pos(*c);
                         Vec2::new(
                             (pixel_pos.x + hex_pixel_pos.x) / 2.,
                             (pixel_pos.y + hex_pixel_pos.y) / 2.,
@@ -190,7 +189,7 @@ fn tile_border(hexes: &Query<&HexTile>, team: Team) -> Option<Vec<Vec<Vec2>>> {
                     .filter(|h| neighbor_coords.contains(&h.coordinate))
                     .filter_map(|n| {
                         if n.team != team {
-                            let neighbor_pixel_pos = hex_to_pixel(n.coordinate);
+                            let neighbor_pixel_pos = HEX_LAYOUT.hex_to_world_pos(n.coordinate);
                             return Some(Vec2::new(
                                 (neighbor_pixel_pos.x + hex_pixel_pos.x) / 2.,
                                 (neighbor_pixel_pos.y + hex_pixel_pos.y) / 2.,

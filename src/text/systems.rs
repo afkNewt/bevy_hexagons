@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{board::components::HexTile, hexagon::cursor_to_hex, player::resources::PlayerCoins};
+use crate::{board::components::HexTile, player::resources::PlayerCoins, util::cursor_to_hex};
 
 use super::components::{CoinText, TileText};
 
@@ -67,7 +67,7 @@ pub fn update_tile_info_text(
 
     for hex in &hexes {
         if hex.coordinate == hovered_hex {
-            hex_coord = format!("{:?} {}", hex.variant, hex.coordinate);
+            hex_coord = format!("{:?} {:?}", hex.variant, hex.coordinate);
             hex_capture = format!("{}", hex.capture_progress);
             hex_team = format!("{:?}", hex.team);
         }

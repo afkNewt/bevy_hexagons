@@ -1,9 +1,7 @@
 use bevy::prelude::*;
+use hexx::Hex;
 
-use crate::{
-    board::components::Team,
-    hexagon::{cube_scale_vec, hex_to_pixel, hexes_in_range, hexes_in_ring, Cube},
-};
+use crate::board::{components::Team, HEX_LAYOUT};
 
 pub enum UnitDefault {
     Archer,
@@ -61,7 +59,7 @@ pub enum Action {
 
 #[derive(Component, Clone)]
 pub struct Unit {
-    pub position: Cube,
+    pub position: Hex,
     pub team: Team,
     pub max_health: i32,
     pub health: i32,
@@ -70,14 +68,14 @@ pub struct Unit {
     pub actions: Vec<Action>,
     // tiles relative to current
     // that can be moved to
-    pub move_hexes: Vec<Cube>,
+    pub move_hexes: Vec<Hex>,
     // tiles relative to current
     // that can be attacked
-    pub attack_hexes: Vec<Cube>,
+    pub attack_hexes: Vec<Hex>,
 }
 
 impl Unit {
-    pub fn new_default(default: UnitDefault, position: Cube, team: Team) -> Self {
+    pub fn new_default(default: UnitDefault, position: Hex, team: Team) -> Self {
         let actions = vec![Action::Move];
 
         match default {
@@ -89,8 +87,8 @@ impl Unit {
                 damage: 2,
                 keywords: Vec::new(),
                 actions,
-                move_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
-                attack_hexes: hexes_in_ring(2, Cube::axial_new(0, 0)),
+                move_hexes: Hex::NEIGHBORS_COORDS.to_vec(),
+                attack_hexes: Hex::ZERO.ring(2).collect::<Vec<Hex>>(),
             },
             UnitDefault::BladeDancer => Unit {
                 position,
@@ -100,8 +98,8 @@ impl Unit {
                 damage: 2,
                 keywords: vec![Keyword::Nimble, Keyword::Executioner],
                 actions,
-                move_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
-                attack_hexes: Cube::CUBE_DIAGONAL_VECTORS.to_vec(),
+                move_hexes: Hex::NEIGHBORS_COORDS.to_vec(),
+                attack_hexes: Hex::DIAGONAL_COORDS.to_vec(),
             },
             UnitDefault::Scout => Unit {
                 position,
@@ -111,8 +109,8 @@ impl Unit {
                 damage: 1,
                 keywords: Vec::new(),
                 actions,
-                move_hexes: hexes_in_range(2, Cube::axial_new(0, 0)),
-                attack_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
+                move_hexes: Hex::ZERO.range(2).collect::<Vec<Hex>>(),
+                attack_hexes: Hex::NEIGHBORS_COORDS.to_vec(),
             },
             UnitDefault::Knight => Unit {
                 position,
@@ -122,8 +120,8 @@ impl Unit {
                 damage: 2,
                 keywords: vec![Keyword::Armor(1)],
                 actions,
-                move_hexes: [Cube::CUBE_DIRECTION_VECTORS, Cube::CUBE_DIAGONAL_VECTORS].concat(),
-                attack_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
+                move_hexes: [Hex::NEIGHBORS_COORDS, Hex::DIAGONAL_COORDS].concat(),
+                attack_hexes: Hex::NEIGHBORS_COORDS.to_vec(),
             },
             UnitDefault::Catapult => Unit {
                 position,
@@ -133,8 +131,8 @@ impl Unit {
                 damage: 4,
                 keywords: Vec::new(),
                 actions,
-                move_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
-                attack_hexes: hexes_in_ring(3, Cube::axial_new(0, 0)),
+                move_hexes: Hex::NEIGHBORS_COORDS.to_vec(),
+                attack_hexes: Hex::ZERO.ring(3).collect::<Vec<Hex>>(),
             },
             UnitDefault::Sniper => Unit {
                 position,
@@ -147,8 +145,8 @@ impl Unit {
                     countdown: 2,
                 }],
                 actions,
-                move_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
-                attack_hexes: cube_scale_vec(Cube::CUBE_DIRECTION_VECTORS.to_vec(), 5),
+                move_hexes: Hex::NEIGHBORS_COORDS.to_vec(),
+                attack_hexes: Hex::NEIGHBORS_COORDS.map(|h| h * 5).to_vec(),
             },
             UnitDefault::Newt => Unit {
                 position,
@@ -162,8 +160,8 @@ impl Unit {
                     Keyword::Despised,
                 ],
                 actions,
-                move_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
-                attack_hexes: Cube::CUBE_DIRECTION_VECTORS.to_vec(),
+                move_hexes: Hex::NEIGHBORS_COORDS.to_vec(),
+                attack_hexes: Hex::NEIGHBORS_COORDS.to_vec(),
             },
         }
     }
@@ -240,27 +238,15 @@ impl Unit {
         if self.keywords.contains(&Keyword::Nimble) && killed {
             self.position = opponent.position;
 
-            my_transform.translation = hex_to_pixel(self.position).extend(1.);
+            my_transform.translation = HEX_LAYOUT.hex_to_world_pos(self.position).extend(1.);
         }
     }
 
-    pub fn relative_attack_hexes(&self) -> Vec<Cube> {
-        let mut hexes = Vec::new();
-
-        for hex in &self.attack_hexes {
-            hexes.push(self.position.cube_add(*hex));
-        }
-
-        hexes
+    pub fn relative_attack_hexes(&self) -> Vec<Hex> {
+        self.attack_hexes.iter().map(|h| *h + self.position).collect::<Vec<Hex>>()
     }
 
-    pub fn relative_move_hexes(&self) -> Vec<Cube> {
-        let mut hexes = Vec::new();
-
-        for hex in &self.move_hexes {
-            hexes.push(self.position.cube_add(*hex));
-        }
-
-        hexes
+    pub fn relative_move_hexes(&self) -> Vec<Hex> {
+        self.move_hexes.iter().map(|h| *h + self.position).collect::<Vec<Hex>>()
     }
 }

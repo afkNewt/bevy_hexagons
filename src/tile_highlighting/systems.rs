@@ -1,16 +1,16 @@
 use bevy::prelude::*;
+use hexx::Hex;
 
 use crate::{
     board::{
         components::{HexTile, Team},
         resources::HexColors,
-        HEX_RADIUS, HEX_SIZE,
+        HEX_RADIUS, HEX_SIZE, HEX_LAYOUT,
     },
-    hexagon::{cursor_to_hex, hex_to_pixel, hexes_in_range, Cube},
     units::{
         components::{Action, Unit},
         resources::SelectedUnit,
-    },
+    }, util::cursor_to_hex,
 };
 
 use super::components::TilePurposeSprite;
@@ -34,16 +34,12 @@ pub fn highlight_hovered_hex(
     };
 
     for (hex, mut color_mat) in &mut hexes {
-        if hex.coordinate.q != hovered_hex.q {
-            continue;
-        }
-
-        if hex.coordinate.r != hovered_hex.r {
+        if hex.coordinate != hovered_hex {
             continue;
         }
 
         *color_mat = hex.strong_highlight(&colors);
-        return;
+        break;
     }
 }
 
@@ -65,9 +61,9 @@ pub fn highlight_unit_hex(
     let mut weak_highlights = Vec::new();
 
     if unit.actions.contains(&Action::Attack) {
-        strong_highlights.append(&mut unit.relative_move_hexes());
+        strong_highlights.append(&mut unit.relative_attack_hexes());
     } else {
-        weak_highlights.append(&mut unit.relative_move_hexes());
+        weak_highlights.append(&mut unit.relative_attack_hexes());
     };
 
     if unit.actions.contains(&Action::Move) {
@@ -103,17 +99,17 @@ pub fn spawn_tile_purpose_sprites(
         return;
     };
 
-    let valid_hex_tiles = hexes_in_range(HEX_RADIUS, Cube::axial_new(0, 0));
+    let valid_hex_tiles = Hex::ZERO.range(HEX_RADIUS as u32).collect::<Vec<Hex>>();
 
     let mut both = unit.relative_move_hexes();
-    both.retain(|cube| unit.relative_move_hexes().contains(cube));
+    both.retain(|cube| unit.relative_attack_hexes().contains(cube));
 
     for hex in unit.relative_move_hexes() {
         if !valid_hex_tiles.contains(&hex) {
             continue;
         }
 
-        let pixel_position = hex_to_pixel(hex);
+        let pixel_position = HEX_LAYOUT.hex_to_world_pos(hex);
 
         let transform = if both.contains(&hex) {
             Transform {
@@ -138,12 +134,12 @@ pub fn spawn_tile_purpose_sprites(
             .insert(TilePurposeSprite(Action::Move));
     }
 
-    for hex in unit.relative_move_hexes() {
+    for hex in unit.relative_attack_hexes () {
         if !valid_hex_tiles.contains(&hex) {
             continue;
         }
 
-        let pixel_position = hex_to_pixel(hex);
+        let pixel_position = HEX_LAYOUT.hex_to_world_pos(hex);
 
         let transform = if both.contains(&hex) {
             Transform {

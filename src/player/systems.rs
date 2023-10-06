@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 
+
 use crate::{
     board::components::{HexTile, Team, TileVariant},
-    hexagon::cursor_to_hex,
-    units::components::Unit,
+    units::components::Unit, util::cursor_to_hex,
 };
 
 use super::resources::{AllyCapital, PlayerCoins, TurnCounter};
@@ -20,9 +20,12 @@ pub fn place_ally_capital(
     if !buttons.just_pressed(MouseButton::Left) {
         return;
     }
-    let Some(hovered_hex) = cursor_to_hex(windows) else { return; };
 
-    let claim_tiles = hovered_hex.cube_neighbors();
+    let Some(hovered_hex) = cursor_to_hex(windows) else {
+        return;
+    };
+
+    let claim_tiles = hovered_hex.all_neighbors();
 
     for hex in &hexes {
         if !claim_tiles.contains(&hex.coordinate) {
@@ -89,7 +92,7 @@ fn update_capture_progress(mut tiles: Query<&mut HexTile>, units: Query<&Unit>) 
                 return None;
             }
 
-            let neighbors = hex_tile.coordinate.cube_neighbors();
+            let neighbors = hex_tile.coordinate.all_neighbors();
             if tiles.iter().any(|neighbor| {
                 neighbors.contains(&neighbor.coordinate) && unit.team == neighbor.team
             }) {

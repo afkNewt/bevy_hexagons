@@ -3,10 +3,11 @@ use board::BoardPlugin;
 use enemy::EnemyPlugin;
 use player::PlayerPlugin;
 
+use text::TextPlugin;
 use tile_highlighting::TileHighlighting;
 use units::UnitsPlugin;
 
-pub mod hexagon;
+pub mod util;
 
 pub mod board;
 mod enemy;
@@ -24,7 +25,7 @@ fn main() {
             EnemyPlugin,
             PlayerPlugin,
             UnitsPlugin,
-            // TextPlugin,
+            TextPlugin,
             TileHighlighting,
         ))
         .add_systems(Startup, setup)

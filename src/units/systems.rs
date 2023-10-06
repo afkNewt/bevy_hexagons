@@ -1,11 +1,9 @@
 use bevy::prelude::*;
+use hexx::{hex, Hex};
 
 const UNIT_SPRITE_SIZE: f32 = HEX_SIZE / 110.;
 
-use crate::{
-    board::{components::Team, resources::HexColors, HEX_SIZE},
-    hexagon::{cursor_to_hex, hex_to_pixel, Cube},
-};
+use crate::{board::{components::Team, resources::HexColors, HEX_SIZE, HEX_LAYOUT}, util::cursor_to_hex};
 
 use super::{
     components::{Action, Unit, UnitDefault},
@@ -16,21 +14,21 @@ pub fn test_spawn_unit(mut commands: Commands, asset_server: Res<AssetServer>) {
     spawn_unit(
         &mut commands,
         &asset_server,
-        Cube::axial_new(-2, 4),
+        hex(-2, 4),
         UnitDefault::Knight,
         Team::Ally,
     );
     spawn_unit(
         &mut commands,
         &asset_server,
-        Cube::axial_new(-2, 1),
+        hex(-2, 1),
         UnitDefault::Newt,
         Team::Enemy,
     );
     spawn_unit(
         &mut commands,
         &asset_server,
-        Cube::axial_new(-3, 0),
+        hex(-3, 0),
         UnitDefault::Archer,
         Team::Enemy,
     );
@@ -39,11 +37,11 @@ pub fn test_spawn_unit(mut commands: Commands, asset_server: Res<AssetServer>) {
 fn spawn_unit(
     commands: &mut Commands,
     asset_server: &Res<AssetServer>,
-    hex_pos: Cube,
+    hex_pos: Hex,
     unit: UnitDefault,
     team: Team,
 ) {
-    let pixel_pos = hex_to_pixel(hex_pos);
+    let pixel_pos = HEX_LAYOUT.hex_to_world_pos(hex_pos);
     commands
         .spawn(SpriteBundle {
             transform: Transform {
@@ -77,11 +75,7 @@ pub fn check_for_unit_selection(
     }
 
     for (unit, entity) in &units {
-        if unit.position.q != hovered_hex.q {
-            continue;
-        }
-
-        if unit.position.r != hovered_hex.r {
+        if unit.position != hovered_hex {
             continue;
         }
 
@@ -131,8 +125,8 @@ pub fn check_for_unit_movement(
         return;
     }
 
-    if unit.relative_move_hexes().contains(&hovered_hex) && unit.actions.contains(&Action::Attack) {
-        let pixel_pos = hex_to_pixel(hovered_hex);
+    if unit.relative_attack_hexes().contains(&hovered_hex) && unit.actions.contains(&Action::Attack) {
+        let pixel_pos = HEX_LAYOUT.hex_to_world_pos(hovered_hex);
 
         let mut enemy_entity = None;
         for (enemy_unit, transform, entity) in &units {
@@ -160,7 +154,7 @@ pub fn check_for_unit_movement(
     let unit = units.get(selected_entity).unwrap().0;
 
     if unit.relative_move_hexes().contains(&hovered_hex) && unit.actions.contains(&Action::Move) {
-        let new_position = hex_to_pixel(hovered_hex).extend(1.);
+        let new_position = HEX_LAYOUT.hex_to_world_pos(hovered_hex).extend(1.);
 
         // check if tile is occupied
         for (_unit, transform, _entity) in &units {
