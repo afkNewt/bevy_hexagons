@@ -5,7 +5,6 @@ use player::PlayerPlugin;
 
 use tile_highlighting::TileHighlighting;
 use units::UnitsPlugin;
-use user_interface::UserInterfacePlugin;
 
 pub mod hexagon;
 
@@ -15,14 +14,12 @@ mod player;
 mod text;
 mod tile_highlighting;
 pub mod units;
-mod user_interface;
 
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb_u8(20, 20, 20)))
         .add_plugins(DefaultPlugins)
         .add_plugins((
-            UserInterfacePlugin,
             BoardPlugin,
             EnemyPlugin,
             PlayerPlugin,
